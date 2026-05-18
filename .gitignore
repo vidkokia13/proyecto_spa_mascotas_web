@@ -27,3 +27,4 @@ desktop.ini
 node_modules/
 sql/
 .env.example
+SQL_REFERENCE.md
