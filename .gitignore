@@ -1,0 +1,29 @@
+# Datos internos de Claude Code
+.claude/
+
+# Archivos comprimidos / backups
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE raíz
+.vscode/
+.idea/
+
+# Herramientas de IA / asistentes de código
+.gemini/
+.qoder/
+.mcp.json
+.opencode.json
+.code-review-graph/
+
+# Dependencias (por si se instalan en la raíz)
+node_modules/
+sql/
+.env.example

@@ -1,0 +1,33 @@
+# Dependencias
+node_modules/
+
+# Variables de entorno (contienen credenciales reales)
+.env
+.env.local
+.env.*.local
+
+# Scripts de seed con credenciales hardcodeadas (solo para desarrollo local)
+sql/seed_admin.js
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Build
+coverage/
+dist/
+build/
+
+# Herramientas de IA / asistentes de código (no pertenecen al repo)
+.code-review-graph/
+.gemini/
+.qoder/
+.mcp.json
+.opencode.json
