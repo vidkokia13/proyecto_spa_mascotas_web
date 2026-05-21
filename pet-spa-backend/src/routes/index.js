@@ -2,14 +2,19 @@
 
 const { Router } = require('express');
 
-const authRoutes     = require('./authRoutes');
-const employeeRoutes = require('./employeeRoutes');
-const auditRoutes    = require('./auditRoutes');
-const mascotaRoutes  = require('./mascotaRoutes');
-const servicioRoutes = require('./servicioRoutes');
-const horarioRoutes  = require('./horarioRoutes');
-const agendaRoutes   = require('./agendaRoutes');
-const citaRoutes     = require('./citaRoutes');
+const authRoutes      = require('./authRoutes');
+const employeeRoutes  = require('./employeeRoutes');
+const auditRoutes     = require('./auditRoutes');
+const mascotaRoutes   = require('./mascotaRoutes');
+const servicioRoutes  = require('./servicioRoutes');
+const horarioRoutes   = require('./horarioRoutes');
+const agendaRoutes    = require('./agendaRoutes');
+const citaRoutes      = require('./citaRoutes');
+const pagoRoutes      = require('./pagoRoutes');
+const fichaRoutes     = require('./fichaRoutes');
+const checklistRoutes = require('./checklistRoutes');
+const fotoRoutes      = require('./fotoRoutes');
+const insumoRoutes    = require('./insumoRoutes');
 
 const router = Router();
 
@@ -23,5 +28,10 @@ router.use('/servicios', servicioRoutes);
 router.use('/horarios',  horarioRoutes);
 router.use('/agenda',    agendaRoutes);
 router.use('/citas',     citaRoutes);
+router.use('/pagos',     pagoRoutes);
+router.use('/fichas',    fichaRoutes);
+router.use('/checklist', checklistRoutes);
+router.use('/fotos',     fotoRoutes);
+router.use('/insumos',   insumoRoutes);
 
 module.exports = router;

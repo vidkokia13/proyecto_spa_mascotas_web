@@ -13,6 +13,7 @@
  */
 'use strict';
 
+const path = require('path');
 const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
@@ -57,6 +58,9 @@ app.use((req, _res, next) => {
   logger.info(`${req.method} ${req.originalUrl}`);
   next();
 });
+
+// --- Archivos estáticos (fotos de citas) ---
+app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 // --- Rutas ---
 app.use('/api', routes);

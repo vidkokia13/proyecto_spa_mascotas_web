@@ -23,6 +23,7 @@ router.post('/', validate(citaValidators.create, 'body'), asyncHandler(citaContr
 // Single appointment
 router.get('/:id',          validate(citaValidators.idParam, 'params'), asyncHandler(citaController.getOne));
 router.patch('/:id/estado', validate(citaValidators.idParam, 'params'), validate(citaValidators.updateEstado, 'body'), asyncHandler(citaController.cambiarEstado));
-router.patch('/:id',        requireRole('admin','jefe','recepcion'), validate(citaValidators.idParam, 'params'), asyncHandler(citaController.actualizar));
+router.patch('/:id/reprogramar', requireRole('admin','jefe','recepcion'), validate(citaValidators.idParam, 'params'), validate(citaValidators.reprogramar, 'body'), asyncHandler(citaController.reprogramar));
+router.patch('/:id',             requireRole('admin','jefe','recepcion'), validate(citaValidators.idParam, 'params'), asyncHandler(citaController.actualizar));
 
 module.exports = router;
