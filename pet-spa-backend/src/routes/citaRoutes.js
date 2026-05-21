@@ -1,0 +1,28 @@
+'use strict';
+
+const { Router }      = require('express');
+const authRequired    = require('../middlewares/authRequired');
+const requireRole     = require('../middlewares/requireRole');
+const validate        = require('../middlewares/validate');
+const asyncHandler    = require('../utils/asyncHandler');
+const citaController  = require('../controllers/citaController');
+const citaValidators  = require('../validators/citaValidators');
+
+const router = Router();
+router.use(authRequired);
+
+// Cliente: see own appointments
+router.get('/mis-citas', asyncHandler(citaController.misCitas));
+
+// Staff: list appointments by date range
+router.get('/', requireRole('admin','jefe','recepcion','trabajador'), validate(citaValidators.queryRango, 'query'), asyncHandler(citaController.listRango));
+
+// All authenticated: create appointment
+router.post('/', validate(citaValidators.create, 'body'), asyncHandler(citaController.crear));
+
+// Single appointment
+router.get('/:id',          validate(citaValidators.idParam, 'params'), asyncHandler(citaController.getOne));
+router.patch('/:id/estado', validate(citaValidators.idParam, 'params'), validate(citaValidators.updateEstado, 'body'), asyncHandler(citaController.cambiarEstado));
+router.patch('/:id',        requireRole('admin','jefe','recepcion'), validate(citaValidators.idParam, 'params'), asyncHandler(citaController.actualizar));
+
+module.exports = router;
