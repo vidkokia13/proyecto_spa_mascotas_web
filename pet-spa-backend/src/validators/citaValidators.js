@@ -31,6 +31,11 @@ const getSlotsQuery = Joi.object({
   idTrabajador: Joi.string().uuid().allow(null, ''),
 });
 
+const reprogramar = Joi.object({
+  fechaHoraInicio: Joi.date().iso().min('now').required()
+    .messages({ 'date.min': 'La nueva fecha debe ser futura.' }),
+});
+
 const idParam = Joi.object({ id: Joi.string().uuid().required() });
 
-module.exports = { create, updateEstado, queryRango, getSlotsQuery, idParam };
+module.exports = { create, updateEstado, queryRango, getSlotsQuery, reprogramar, idParam };

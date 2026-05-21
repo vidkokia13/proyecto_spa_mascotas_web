@@ -10,6 +10,7 @@ const disponibilidadRepo  = require('../repositories/disponibilidadRepository');
 const clientRepo          = require('../repositories/clientRepository');
 const { calcularDuracion } = require('./agendaService');
 const auditService        = require('./auditService');
+const notifService        = require('./notificationService');
 const AppError            = require('../utils/AppError');
 
 function _timeToMin(hhmm) {
@@ -146,7 +147,69 @@ async function cambiarEstado(idCita, estado, idUsuario, rol, ipAddress = null) {
 
   const updated = await citaRepo.updateEstado(idCita, estado);
   await auditService.log({ idUsuario, accion: 'CITA_ESTADO_CAMBIADO', detalle: `Cita ${idCita}: ${cita.estado} → ${estado}`, ipAddress });
+
+  // Notificaciones asíncronas — no bloquean la respuesta
+  const ctx = {
+    email: cita.email_cliente, nombreCliente: cita.nombre_cliente,
+    nombreMascota: cita.nombre_mascota, nombreServicio: cita.nombre_servicio,
+    fechaHoraInicio: cita.fecha_hora_inicio,
+  };
+  if (estado === 'confirmada') notifService.notificarCitaConfirmada(ctx).catch(() => {});
+  if (estado === 'cancelada')  notifService.notificarCitaCancelada(ctx).catch(() => {});
+  if (estado === 'completada') notifService.notificarCitaCompletada(ctx).catch(() => {});
+
   return updated;
+}
+
+async function reprogramarCita(idCita, { fechaHoraInicio }, idUsuario, rol, ipAddress = null) {
+  return withTransaction(async (client) => {
+    const cita = await citaRepo.findById(idCita, client);
+    if (!cita) throw new AppError('Cita no encontrada.', 404, 'CITA_NOT_FOUND');
+    if (!['admin','jefe','recepcion'].includes(rol)) throw new AppError('Sin permisos.', 403, 'FORBIDDEN');
+    if (!['pendiente','confirmada'].includes(cita.estado)) {
+      throw new AppError('Solo se pueden reprogramar citas pendientes o confirmadas.', 409, 'INVALID_STATE');
+    }
+
+    const mascota  = await mascotaRepo.findById(cita.id_mascota, client);
+    const servicio = await servicioRepo.findById(cita.id_servicio, client);
+    const duracion = calcularDuracion(servicio.duracion_base, mascota.tamano, mascota.temperamento, mascota.tiempo_extra_min);
+
+    const inicio    = new Date(fechaHoraInicio);
+    const fecha     = inicio.toISOString().slice(0, 10);
+    const diaSemana = inicio.getDay();
+    const horario   = await horarioRepo.findByDia(diaSemana, client);
+    if (!horario || !horario.activo) throw new AppError('El spa no atiende ese día.', 409, 'SPA_CLOSED');
+
+    const slotMin    = inicio.getHours() * 60 + inicio.getMinutes();
+    const slotFinMin = slotMin + duracion;
+    const [hFin, mFin] = horario.hora_fin.split(':').map(Number);
+    if (slotFinMin > hFin * 60 + mFin) {
+      throw new AppError('La cita terminaría después del cierre del spa.', 409, 'SLOT_OVERFLOW');
+    }
+
+    const { slotInicio, slotFin } = await _validarSlot({
+      fecha, diaSemana, slotMin, slotFinMin,
+      idTrabajador: cita.id_trabajador,
+      capacidadMax: horario.capacidad_max,
+      client, excludeId: idCita,
+    });
+
+    const updated = await citaRepo.update(idCita, {
+      fecha_hora_inicio: slotInicio,
+      fecha_hora_fin:    slotFin,
+      duracion_ajustada: duracion,
+    }, client);
+
+    await auditService.log({ idUsuario, accion: 'CITA_REPROGRAMADA', detalle: `Cita ${idCita} → ${fechaHoraInicio}`, ipAddress }, client);
+
+    notifService.notificarCitaReprogramada({
+      email: cita.email_cliente, nombreCliente: cita.nombre_cliente,
+      nombreMascota: cita.nombre_mascota, nombreServicio: cita.nombre_servicio,
+      fechaHoraInicio: slotInicio,
+    }).catch(() => {});
+
+    return updated;
+  });
 }
 
 async function actualizarCita(idCita, fields, idUsuario, rol, ipAddress = null) {
@@ -161,4 +224,4 @@ async function actualizarCita(idCita, fields, idUsuario, rol, ipAddress = null) 
   return updated;
 }
 
-module.exports = { crearCita, getCita, getMisCitas, getCitasRango, cambiarEstado, actualizarCita };
+module.exports = { crearCita, getCita, getMisCitas, getCitasRango, cambiarEstado, actualizarCita, reprogramarCita };

@@ -59,4 +59,11 @@ async function actualizar(req, res) {
   res.json({ cita: updated });
 }
 
-module.exports = { crear, getOne, misCitas, listRango, cambiarEstado, actualizar };
+async function reprogramar(req, res) {
+  const updated = await citaService.reprogramarCita(
+    req.params.id, req.body, req.user.id, req.user.rol, req.ip,
+  );
+  res.json({ cita: updated });
+}
+
+module.exports = { crear, getOne, misCitas, listRango, cambiarEstado, actualizar, reprogramar };
