@@ -41,6 +41,8 @@ function redirectByRole(role: string | null, next: NavigationGuardNext): void {
     next({ name: ROUTE_NAMES.ADMIN_DASHBOARD })
   } else if (role === 'trabajador') {
     next({ name: ROUTE_NAMES.EMPLOYEE_DASHBOARD })
+  } else if (role === 'recepcion') {
+    next({ name: ROUTE_NAMES.RECEPCION_DASHBOARD })
   } else {
     next({ name: ROUTE_NAMES.CLIENT_PROFILE })
   }

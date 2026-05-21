@@ -78,7 +78,52 @@ const router = createRouter({
       ],
     },
 
-    // ─── Employee ─────────────────────────────────────────────────────────────
+    // ─── Agenda (admin / jefe / trabajador / recepcion) ───────────────────────
+    {
+      path: '/agenda',
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: 'citas',
+          name: ROUTE_NAMES.AGENDA_CITAS,
+          component: () => import('@/presentation/views/agenda/CitasView.vue'),
+          meta: { requiresAuth: true, layout: 'dashboard' },
+          beforeEnter: roleGuard([ROLES.ADMIN, ROLES.JEFE, ROLES.TRABAJADOR, ROLES.RECEPCION]),
+        },
+        {
+          path: 'horarios',
+          name: ROUTE_NAMES.AGENDA_HORARIOS,
+          component: () => import('@/presentation/views/agenda/HorariosView.vue'),
+          meta: { requiresAuth: true, layout: 'dashboard' },
+          beforeEnter: roleGuard([ROLES.ADMIN, ROLES.JEFE]),
+        },
+        {
+          path: 'bloqueos',
+          name: ROUTE_NAMES.AGENDA_BLOQUEOS,
+          component: () => import('@/presentation/views/agenda/BloqueosView.vue'),
+          meta: { requiresAuth: true, layout: 'dashboard' },
+          beforeEnter: roleGuard([ROLES.ADMIN, ROLES.JEFE, ROLES.RECEPCION]),
+        },
+      ],
+    },
+
+    // ─── Recepcion ────────────────────────────────────────────────────────────
+    {
+      path: '/recepcion',
+      redirect: { name: ROUTE_NAMES.RECEPCION_DASHBOARD },
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: 'dashboard',
+          name: ROUTE_NAMES.RECEPCION_DASHBOARD,
+          component: () => import('@/presentation/views/recepcion/DashboardView.vue'),
+          meta: { requiresAuth: true, layout: 'dashboard' },
+          beforeEnter: roleGuard([ROLES.RECEPCION]),
+        },
+      ],
+    },
+
+    // ─── Employee (groomer) ───────────────────────────────────────────────────
     {
       path: '/employee',
       redirect: { name: ROUTE_NAMES.EMPLOYEE_DASHBOARD },
@@ -95,11 +140,44 @@ const router = createRouter({
 
     // ─── Client ───────────────────────────────────────────────────────────────
     {
+      path: '/client',
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: 'profile',
+          name: ROUTE_NAMES.CLIENT_PROFILE,
+          component: () => import('@/presentation/views/client/ProfileView.vue'),
+          meta: { requiresAuth: true, layout: 'dashboard' },
+          beforeEnter: roleGuard([ROLES.CLIENTE]),
+        },
+        {
+          path: 'mascotas',
+          name: ROUTE_NAMES.CLIENT_MASCOTAS,
+          component: () => import('@/presentation/views/client/MascotasView.vue'),
+          meta: { requiresAuth: true, layout: 'dashboard' },
+          beforeEnter: roleGuard([ROLES.CLIENTE]),
+        },
+        {
+          path: 'citas',
+          name: ROUTE_NAMES.CLIENT_CITAS,
+          component: () => import('@/presentation/views/client/CitasView.vue'),
+          meta: { requiresAuth: true, layout: 'dashboard' },
+          beforeEnter: roleGuard([ROLES.CLIENTE]),
+        },
+        {
+          path: 'nueva-cita',
+          name: ROUTE_NAMES.CLIENT_NUEVA_CITA,
+          component: () => import('@/presentation/views/client/NuevaCitaView.vue'),
+          meta: { requiresAuth: true, layout: 'dashboard' },
+          beforeEnter: roleGuard([ROLES.CLIENTE]),
+        },
+      ],
+    },
+
+    // Keep old /profile redirect for backward compat
+    {
       path: '/profile',
-      name: ROUTE_NAMES.CLIENT_PROFILE,
-      component: () => import('@/presentation/views/client/ProfileView.vue'),
-      meta: { requiresAuth: true, layout: 'dashboard' },
-      beforeEnter: roleGuard([ROLES.CLIENTE]),
+      redirect: { name: ROUTE_NAMES.CLIENT_PROFILE },
     },
 
     // ─── Error pages ──────────────────────────────────────────────────────────

@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useAuthStore } from '@/presentation/stores/auth.store'
 import { useRouter } from 'vue-router'
+import { useCitas } from '@/presentation/composables/useCitas'
 import { ROUTE_NAMES } from '@/shared/constants/routes'
 import BaseCard   from '@/presentation/components/ui/BaseCard.vue'
 import BaseButton from '@/presentation/components/ui/BaseButton.vue'
@@ -10,6 +11,7 @@ import { ROLE_LABELS, ROLE_COLORS } from '@/shared/constants/roles'
 
 const authStore = useAuthStore()
 const router    = useRouter()
+const { store, loadRango, cambiarEstado } = useCitas()
 
 const greeting = computed(() => {
   const h = new Date().getHours()
@@ -17,21 +19,52 @@ const greeting = computed(() => {
   if (h < 18) return 'Buenas tardes'
   return 'Buenas noches'
 })
+
+const today    = new Date().toISOString().slice(0, 10)
+const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10)
+
+const ESTADO_LABEL: Record<string, string> = {
+  pendiente: 'Pendiente', confirmada: 'Confirmada', en_proceso: 'En proceso',
+  completada: 'Completada', cancelada: 'Cancelada',
+}
+const ESTADO_COLOR: Record<string, string> = {
+  pendiente:  'bg-yellow-100 text-yellow-800',
+  confirmada: 'bg-green-100 text-green-800',
+  en_proceso: 'bg-blue-100 text-blue-800',
+  completada: 'bg-gray-100 text-gray-700',
+  cancelada:  'bg-red-100 text-red-800',
+}
+
+function formatHora(iso: string): string {
+  return new Date(iso).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })
+}
+
+type EstadoNext = 'confirmada' | 'en_proceso' | 'completada' | 'cancelada'
+const WORKER_TRANSITIONS: Record<string, EstadoNext[]> = {
+  pendiente:  ['confirmada', 'en_proceso', 'cancelada'],
+  confirmada: ['en_proceso', 'cancelada'],
+  en_proceso: ['completada'],
+}
+
+onMounted(() => {
+  const idTrabajador = authStore.user?.id_trabajador
+  loadRango({ fechaInicio: today, fechaFin: tomorrow, idTrabajador: idTrabajador ?? undefined })
+})
 </script>
 
 <template>
-  <div class="space-y-6">
+  <div class="p-6 max-w-4xl mx-auto space-y-6">
     <div>
       <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
         {{ greeting }}, {{ authStore.user?.nombre?.split(' ')[0] }}
       </h1>
-      <p class="text-gray-500 dark:text-gray-400 mt-1 text-sm">Panel de empleado</p>
+      <p class="text-gray-500 dark:text-gray-400 mt-1 text-sm">Panel de groomer</p>
     </div>
 
     <!-- Profile card -->
     <BaseCard>
       <div class="flex items-center gap-5">
-        <div class="w-16 h-16 bg-primary-100 dark:bg-primary-900/30 rounded-2xl flex items-center justify-center text-primary-700 dark:text-primary-300 font-bold text-2xl flex-shrink-0">
+        <div class="w-14 h-14 bg-primary-100 dark:bg-primary-900/30 rounded-2xl flex items-center justify-center text-primary-700 dark:text-primary-300 font-bold text-2xl flex-shrink-0">
           {{ authStore.user?.nombre?.charAt(0).toUpperCase() }}
         </div>
         <div class="flex-1 min-w-0">
@@ -43,44 +76,51 @@ const greeting = computed(() => {
             </BaseBadge>
           </div>
         </div>
+        <div class="flex gap-2">
+          <BaseButton size="sm" @click="router.push({ name: ROUTE_NAMES.AGENDA_CITAS })">Ver agenda</BaseButton>
+          <BaseButton size="sm" variant="secondary" @click="router.push({ name: ROUTE_NAMES.CHANGE_PASSWORD })">Seguridad</BaseButton>
+        </div>
       </div>
     </BaseCard>
 
-    <!-- Quick links -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      <BaseCard>
-        <div class="flex flex-col gap-3">
-          <div class="w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
-            <svg class="w-5 h-5 text-primary-700 dark:text-primary-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
-          </div>
-          <div>
-            <p class="font-medium text-gray-900 dark:text-white text-sm">Seguridad</p>
-            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Administrá tu contraseña</p>
-          </div>
-          <BaseButton size="sm" variant="secondary" @click="router.push({ name: ROUTE_NAMES.CHANGE_PASSWORD })">
-            Ir a seguridad
-          </BaseButton>
-        </div>
-      </BaseCard>
+    <!-- Today's appointments -->
+    <div>
+      <h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">Mis citas de hoy</h2>
 
-      <BaseCard>
-        <div class="flex flex-col gap-3">
-          <div class="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-            <svg class="w-5 h-5 text-blue-700 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
+      <div v-if="store.loading" class="text-center py-8 text-gray-400">Cargando…</div>
+      <div v-else-if="store.citas.length === 0" class="text-center py-10">
+        <p class="text-gray-500">No tienes citas programadas para hoy.</p>
+      </div>
+      <div v-else class="space-y-3">
+        <BaseCard v-for="c in store.citas" :key="c.id_cita">
+          <div class="flex items-start gap-4 flex-wrap">
+            <div class="w-14 text-center flex-shrink-0">
+              <p class="text-lg font-bold text-primary-600 dark:text-primary-400">{{ formatHora(c.fecha_hora_inicio) }}</p>
+              <p class="text-xs text-gray-400">{{ c.duracion_ajustada }} min</p>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-0.5 flex-wrap">
+                <span class="font-medium text-gray-900 dark:text-white">{{ c.nombre_mascota }}</span>
+                <BaseBadge :color="ESTADO_COLOR[c.estado]">{{ ESTADO_LABEL[c.estado] }}</BaseBadge>
+              </div>
+              <p class="text-sm text-gray-500">{{ c.nombre_cliente }} · {{ c.nombre_servicio }}</p>
+              <p v-if="c.notas" class="text-xs text-gray-400 italic mt-1">{{ c.notas }}</p>
+            </div>
+            <div class="flex gap-2 flex-wrap">
+              <BaseButton
+                v-for="next in WORKER_TRANSITIONS[c.estado] ?? []"
+                :key="next"
+                size="sm"
+                :variant="next === 'cancelada' ? 'danger' : 'primary'"
+                :disabled="store.loading"
+                @click="cambiarEstado(c.id_cita, next)"
+              >
+                {{ ESTADO_LABEL[next] }}
+              </BaseButton>
+            </div>
           </div>
-          <div>
-            <p class="font-medium text-gray-900 dark:text-white text-sm">Agenda</p>
-            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Módulo próximamente</p>
-          </div>
-          <BaseButton size="sm" variant="secondary" disabled>
-            Próximamente
-          </BaseButton>
-        </div>
-      </BaseCard>
+        </BaseCard>
+      </div>
     </div>
   </div>
 </template>
