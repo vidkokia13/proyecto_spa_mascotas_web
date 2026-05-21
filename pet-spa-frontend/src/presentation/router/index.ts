@@ -75,7 +75,30 @@ const router = createRouter({
           meta: { requiresAuth: true, layout: 'dashboard' },
           beforeEnter: roleGuard([ROLES.ADMIN, ROLES.JEFE]),
         },
+        {
+          path: 'servicios',
+          name: ROUTE_NAMES.ADMIN_SERVICIOS,
+          component: () => import('@/presentation/views/admin/ServiciosView.vue'),
+          meta: { requiresAuth: true, layout: 'dashboard' },
+          beforeEnter: roleGuard([ROLES.ADMIN, ROLES.JEFE]),
+        },
+        {
+          path: 'insumos',
+          name: ROUTE_NAMES.ADMIN_INSUMOS,
+          component: () => import('@/presentation/views/admin/InsumosView.vue'),
+          meta: { requiresAuth: true, layout: 'dashboard' },
+          beforeEnter: roleGuard([ROLES.ADMIN, ROLES.JEFE]),
+        },
       ],
+    },
+
+    // ─── Cita detalle (all internal roles) ───────────────────────────────────
+    {
+      path: '/citas/:id',
+      name: ROUTE_NAMES.CITA_DETALLE,
+      component: () => import('@/presentation/views/cita/CitaDetalleView.vue'),
+      meta: { requiresAuth: true, layout: 'dashboard' },
+      beforeEnter: roleGuard([ROLES.ADMIN, ROLES.JEFE, ROLES.TRABAJADOR, ROLES.RECEPCION]),
     },
 
     // ─── Agenda (admin / jefe / trabajador / recepcion) ───────────────────────

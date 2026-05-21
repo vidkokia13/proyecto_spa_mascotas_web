@@ -176,6 +176,141 @@ export interface UpdateCitaPayload {
 }
 
 export interface CambiarEstadoPayload { estado: EstadoCita }
+export interface ReprogramarPayload   { fechaHoraInicio: string }
 
 export interface CitaListResponse { citas: Cita[] }
 export interface CitaResponse     { cita:  Cita }
+
+// ── Pagos ─────────────────────────────────────────────────────────────────────
+export type MetodoPago = 'efectivo' | 'qr' | 'transferencia'
+
+export interface Pago {
+  id_pago:        string
+  id_cita:        string
+  monto:          number
+  metodo:         MetodoPago
+  referencia:     string | null
+  registrado_por: string | null
+  creado_en:      string
+}
+export interface CreatePagoPayload {
+  idCita:      string
+  monto:       number
+  metodo:      MetodoPago
+  referencia?: string | null
+}
+export interface PagoListResponse { pagos: Pago[] }
+export interface PagoResponse     { pago:  Pago  }
+
+// ── Fichas técnicas ───────────────────────────────────────────────────────────
+export interface FichaTecnica {
+  id_ficha:       string
+  id_cita:        string
+  estado_pelaje:  string | null
+  condicion_piel: string | null
+  observaciones:  string | null
+  peso_actual:    number | null
+  creado_por:     string | null
+  creado_en:      string
+  actualizado_en: string
+}
+export interface UpsertFichaPayload {
+  idCita:         string
+  estadoPelaje?:  string | null
+  condicionPiel?: string | null
+  observaciones?: string | null
+  pesoActual?:    number | null
+}
+export interface FichaResponse { ficha: FichaTecnica }
+
+// ── Checklist ─────────────────────────────────────────────────────────────────
+export interface ChecklistItem {
+  id_item:     string
+  id_servicio: string | null
+  descripcion: string
+  orden:       number
+  activo:      boolean
+}
+export interface CitaChecklistEntry {
+  id_item:       string
+  descripcion:   string
+  orden:         number
+  completado:    boolean
+  completado_en: string | null
+}
+export interface ChecklistItemsResponse  { items:     ChecklistItem[]      }
+export interface CitaChecklistResponse   { checklist: CitaChecklistEntry[] }
+export interface CreateChecklistItemPayload {
+  descripcion:  string
+  orden?:       number
+  idServicio?:  string | null
+}
+export interface UpdateChecklistItemPayload {
+  descripcion?: string
+  orden?:       number
+  activo?:      boolean
+}
+
+// ── Fotos ─────────────────────────────────────────────────────────────────────
+export type TipoFoto = 'antes' | 'durante' | 'despues'
+
+export interface Foto {
+  id_foto:    string
+  id_cita:    string
+  tipo:       TipoFoto
+  url:        string
+  subido_por: string | null
+  creado_en:  string
+}
+export interface FotoListResponse { fotos: Foto[] }
+export interface FotoResponse     { foto:  Foto  }
+
+// ── Insumos ───────────────────────────────────────────────────────────────────
+export interface Insumo {
+  id_insumo: string
+  nombre:    string
+  unidad:    string
+  stock:     number
+  activo:    boolean
+  creado_en: string
+}
+export interface CitaInsumo {
+  id_cita_insumo:    string
+  id_cita:           string
+  id_insumo:         string
+  nombre_insumo:     string
+  unidad:            string
+  cantidad_recibida: number
+  cantidad_usada:    number
+  cantidad_devuelta: number
+  desperdicio:       number
+  registrado_por:    string | null
+  creado_en:         string
+}
+export interface InsumoListResponse    { insumos: Insumo[]    }
+export interface CitaInsumoListResponse{ insumos: CitaInsumo[] }
+
+export interface CreateInsumoPayload {
+  nombre:  string
+  unidad:  string
+  stock?:  number
+}
+export interface UpdateInsumoPayload extends Partial<CreateInsumoPayload> {
+  activo?: boolean
+}
+export interface RegisterInsumosItemPayload {
+  idInsumo:          string
+  cantidadRecibida:  number
+  cantidadUsada:     number
+  cantidadDevuelta?: number
+  desperdicio?:      number
+}
+export interface RegisterInsumosPayload {
+  idCita:   string
+  insumos:  RegisterInsumosItemPayload[]
+}
+export interface UpdateCitaInsumoPayload {
+  cantidadUsada?:    number
+  cantidadDevuelta?: number
+  desperdicio?:      number
+}

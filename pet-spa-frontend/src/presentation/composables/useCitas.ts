@@ -52,5 +52,16 @@ export function useCitas() {
     }
   }
 
-  return { store, loadMisCitas, loadRango, createCita, cambiarEstado, updateCita }
+  async function reprogramarCita(id: string, fechaHoraInicio: string): Promise<boolean> {
+    try {
+      await store.reprogramar(id, fechaHoraInicio)
+      uiStore.showToast('Cita reprogramada correctamente', 'success')
+      return true
+    } catch {
+      uiStore.showToast(store.error ?? 'Error al reprogramar la cita', 'error')
+      return false
+    }
+  }
+
+  return { store, loadMisCitas, loadRango, createCita, cambiarEstado, updateCita, reprogramarCita }
 }

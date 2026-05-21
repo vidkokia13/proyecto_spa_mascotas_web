@@ -40,4 +40,9 @@ export const citaDatasource = {
     const { data } = await http.patch<CitaResponse>(API_ENDPOINTS.CITAS.BY_ID(id), payload)
     return data
   },
+
+  async reprogramar(id: string, payload: import('@/shared/types/agenda.types').ReprogramarPayload): Promise<CitaResponse> {
+    const { data } = await http.patch<CitaResponse>(API_ENDPOINTS.CITAS.REPROGRAMAR(id), payload)
+    return data
+  },
 }

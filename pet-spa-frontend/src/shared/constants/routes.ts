@@ -11,6 +11,10 @@ export const ROUTE_NAMES = {
   ADMIN_USERS:       'admin-users',
   ADMIN_LOGS:        'admin-logs',
   ADMIN_2FA_SETUP:   'admin-2fa-setup',
+  ADMIN_SERVICIOS:   'admin-servicios',
+  ADMIN_INSUMOS:     'admin-insumos',
+
+  CITA_DETALLE:      'cita-detalle',
 
   EMPLOYEE_DASHBOARD: 'employee-dashboard',
   EMPLOYEE_CITAS:     'employee-citas',
@@ -39,6 +43,10 @@ export const ROUTE_PATHS = {
   ADMIN_USERS:       '/admin/users',
   ADMIN_LOGS:        '/admin/logs',
   ADMIN_2FA_SETUP:   '/admin/2fa-setup',
+  ADMIN_SERVICIOS:   '/admin/servicios',
+  ADMIN_INSUMOS:     '/admin/insumos',
+
+  CITA_DETALLE:      '/citas/:id',
 
   EMPLOYEE_DASHBOARD: '/employee/dashboard',
   EMPLOYEE_CITAS:     '/employee/citas',

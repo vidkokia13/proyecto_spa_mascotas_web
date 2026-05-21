@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
 import { useAuthStore } from '@/presentation/stores/auth.store'
-import { useRouter } from 'vue-router'
-import { useCitas } from '@/presentation/composables/useCitas'
-import { ROUTE_NAMES } from '@/shared/constants/routes'
+import { useRouter }    from 'vue-router'
+import { useCitas }     from '@/presentation/composables/useCitas'
+import { ROUTE_NAMES }  from '@/shared/constants/routes'
 import BaseCard   from '@/presentation/components/ui/BaseCard.vue'
 import BaseButton from '@/presentation/components/ui/BaseButton.vue'
 import BaseBadge  from '@/presentation/components/ui/BaseBadge.vue'
@@ -116,6 +116,10 @@ onMounted(() => {
                 @click="cambiarEstado(c.id_cita, next)"
               >
                 {{ ESTADO_LABEL[next] }}
+              </BaseButton>
+              <BaseButton size="sm" variant="secondary"
+                @click="router.push({ name: ROUTE_NAMES.CITA_DETALLE, params: { id: c.id_cita } })">
+                Ver detalle
               </BaseButton>
             </div>
           </div>

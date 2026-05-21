@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useCitas } from '@/presentation/composables/useCitas'
 import { useAuthStore } from '@/presentation/stores/auth.store'
 import BaseCard from '@/presentation/components/ui/BaseCard.vue'
 import BaseButton from '@/presentation/components/ui/BaseButton.vue'
 import BaseBadge from '@/presentation/components/ui/BaseBadge.vue'
+import { ROUTE_NAMES } from '@/shared/constants/routes'
 import type { EstadoCita, Cita } from '@/shared/types/agenda.types'
 
 const authStore = useAuthStore()
+const router    = useRouter()
 const { store, loadRango, cambiarEstado } = useCitas()
 
 const role = computed(() => authStore.userRole ?? '')
@@ -134,6 +137,10 @@ onMounted(load)
               @click="cambiarEstado(c.id_cita, next)"
             >
               {{ ESTADO_LABEL[next] }}
+            </BaseButton>
+            <BaseButton size="sm" variant="secondary"
+              @click="router.push({ name: ROUTE_NAMES.CITA_DETALLE, params: { id: c.id_cita } })">
+              Ver detalle
             </BaseButton>
           </div>
         </div>
