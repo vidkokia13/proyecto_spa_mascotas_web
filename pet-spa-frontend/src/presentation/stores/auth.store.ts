@@ -146,6 +146,8 @@ export const useAuthStore = defineStore('auth', () => {
       router.push({ name: ROUTE_NAMES.ADMIN_DASHBOARD })
     } else if (role === 'trabajador') {
       router.push({ name: ROUTE_NAMES.EMPLOYEE_DASHBOARD })
+    } else if (role === 'recepcion') {
+      router.push({ name: ROUTE_NAMES.RECEPCION_DASHBOARD })
     } else {
       router.push({ name: ROUTE_NAMES.CLIENT_PROFILE })
     }

@@ -1,56 +1,97 @@
 import { ROLES, ADMIN_ROLES, type Role } from '@/shared/constants/roles'
 
 export interface Permission {
-  canViewAdminDashboard: boolean
-  canManageUsers: boolean
-  canViewLogs: boolean
+  canViewAdminDashboard:    boolean
+  canManageUsers:           boolean
+  canViewLogs:              boolean
   canViewEmployeeDashboard: boolean
-  canViewClientProfile: boolean
-  canCreateInternalUsers: boolean
-  canUpdateEmployee: boolean
-  canToggleUserStatus: boolean
+  canViewClientProfile:     boolean
+  canCreateInternalUsers:   boolean
+  canUpdateEmployee:        boolean
+  canToggleUserStatus:      boolean
+  // Agenda module
+  canViewAgendaCitas:       boolean
+  canManageHorarios:        boolean
+  canManageBloqueos:        boolean
+  canCreateBloqueos:        boolean
+  canBookCita:              boolean
 }
 
 const PERMISSION_MAP: Record<string, Permission> = {
   [ROLES.ADMIN]: {
-    canViewAdminDashboard:   true,
-    canManageUsers:          true,
-    canViewLogs:             true,
+    canViewAdminDashboard:    true,
+    canManageUsers:           true,
+    canViewLogs:              true,
     canViewEmployeeDashboard: false,
-    canViewClientProfile:    false,
-    canCreateInternalUsers:  true,
-    canUpdateEmployee:       true,
-    canToggleUserStatus:     true,
+    canViewClientProfile:     false,
+    canCreateInternalUsers:   true,
+    canUpdateEmployee:        true,
+    canToggleUserStatus:      true,
+    canViewAgendaCitas:       true,
+    canManageHorarios:        true,
+    canManageBloqueos:        true,
+    canCreateBloqueos:        true,
+    canBookCita:              true,
   },
   [ROLES.JEFE]: {
-    canViewAdminDashboard:   true,
-    canManageUsers:          true,
-    canViewLogs:             true,
+    canViewAdminDashboard:    true,
+    canManageUsers:           true,
+    canViewLogs:              true,
     canViewEmployeeDashboard: false,
-    canViewClientProfile:    false,
-    canCreateInternalUsers:  true,
-    canUpdateEmployee:       true,
-    canToggleUserStatus:     true,
+    canViewClientProfile:     false,
+    canCreateInternalUsers:   true,
+    canUpdateEmployee:        true,
+    canToggleUserStatus:      true,
+    canViewAgendaCitas:       true,
+    canManageHorarios:        true,
+    canManageBloqueos:        true,
+    canCreateBloqueos:        true,
+    canBookCita:              true,
   },
   [ROLES.TRABAJADOR]: {
-    canViewAdminDashboard:   false,
-    canManageUsers:          false,
-    canViewLogs:             false,
+    canViewAdminDashboard:    false,
+    canManageUsers:           false,
+    canViewLogs:              false,
     canViewEmployeeDashboard: true,
-    canViewClientProfile:    false,
-    canCreateInternalUsers:  false,
-    canUpdateEmployee:       false,
-    canToggleUserStatus:     false,
+    canViewClientProfile:     false,
+    canCreateInternalUsers:   false,
+    canUpdateEmployee:        false,
+    canToggleUserStatus:      false,
+    canViewAgendaCitas:       true,
+    canManageHorarios:        false,
+    canManageBloqueos:        false,
+    canCreateBloqueos:        false,
+    canBookCita:              false,
+  },
+  [ROLES.RECEPCION]: {
+    canViewAdminDashboard:    false,
+    canManageUsers:           false,
+    canViewLogs:              false,
+    canViewEmployeeDashboard: false,
+    canViewClientProfile:     false,
+    canCreateInternalUsers:   false,
+    canUpdateEmployee:        false,
+    canToggleUserStatus:      false,
+    canViewAgendaCitas:       true,
+    canManageHorarios:        false,
+    canManageBloqueos:        false,
+    canCreateBloqueos:        true,
+    canBookCita:              true,
   },
   [ROLES.CLIENTE]: {
-    canViewAdminDashboard:   false,
-    canManageUsers:          false,
-    canViewLogs:             false,
+    canViewAdminDashboard:    false,
+    canManageUsers:           false,
+    canViewLogs:              false,
     canViewEmployeeDashboard: false,
-    canViewClientProfile:    true,
-    canCreateInternalUsers:  false,
-    canUpdateEmployee:       false,
-    canToggleUserStatus:     false,
+    canViewClientProfile:     true,
+    canCreateInternalUsers:   false,
+    canUpdateEmployee:        false,
+    canToggleUserStatus:      false,
+    canViewAgendaCitas:       false,
+    canManageHorarios:        false,
+    canManageBloqueos:        false,
+    canCreateBloqueos:        false,
+    canBookCita:              true,
   },
 }
 

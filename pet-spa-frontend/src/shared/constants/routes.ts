@@ -13,8 +13,18 @@ export const ROUTE_NAMES = {
   ADMIN_2FA_SETUP:   'admin-2fa-setup',
 
   EMPLOYEE_DASHBOARD: 'employee-dashboard',
+  EMPLOYEE_CITAS:     'employee-citas',
 
-  CLIENT_PROFILE: 'client-profile',
+  RECEPCION_DASHBOARD: 'recepcion-dashboard',
+
+  CLIENT_PROFILE:    'client-profile',
+  CLIENT_MASCOTAS:   'client-mascotas',
+  CLIENT_CITAS:      'client-citas',
+  CLIENT_NUEVA_CITA: 'client-nueva-cita',
+
+  AGENDA_CITAS:      'agenda-citas',
+  AGENDA_HORARIOS:   'agenda-horarios',
+  AGENDA_BLOQUEOS:   'agenda-bloqueos',
 } as const
 
 export const ROUTE_PATHS = {
@@ -31,6 +41,16 @@ export const ROUTE_PATHS = {
   ADMIN_2FA_SETUP:   '/admin/2fa-setup',
 
   EMPLOYEE_DASHBOARD: '/employee/dashboard',
+  EMPLOYEE_CITAS:     '/employee/citas',
 
-  CLIENT_PROFILE: '/profile',
+  RECEPCION_DASHBOARD: '/recepcion/dashboard',
+
+  CLIENT_PROFILE:    '/client/profile',
+  CLIENT_MASCOTAS:   '/client/mascotas',
+  CLIENT_CITAS:      '/client/citas',
+  CLIENT_NUEVA_CITA: '/client/nueva-cita',
+
+  AGENDA_CITAS:      '/agenda/citas',
+  AGENDA_HORARIOS:   '/agenda/horarios',
+  AGENDA_BLOQUEOS:   '/agenda/bloqueos',
 } as const
