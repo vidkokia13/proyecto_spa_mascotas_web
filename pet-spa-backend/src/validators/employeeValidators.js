@@ -9,7 +9,7 @@ const create = Joi.object({
   email:               Joi.string().trim().lowercase().email().max(255).required(),
   password:            Joi.string().min(4).max(72).required()
     .messages({ 'string.min': 'La contraseña temporal debe tener al menos 4 caracteres.' }),
-  rol:                 Joi.string().valid('trabajador', 'admin', 'jefe').required(),
+  rol:                 Joi.string().valid('trabajador', 'recepcion', 'admin', 'jefe').required(),
   sueldoMensual:       Joi.number().precision(2).min(0).allow(null),
   activo:              Joi.boolean().default(true),
   turno:               Joi.string().trim().max(50).allow('', null),
