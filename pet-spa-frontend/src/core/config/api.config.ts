@@ -43,10 +43,37 @@ export const API_ENDPOINTS = {
     BLOQUEO_ID:  (id: string) => `/agenda/bloqueos/${id}`,
   },
   CITAS: {
-    BASE:      '/citas',
-    MIS_CITAS: '/citas/mis-citas',
-    BY_ID:     (id: string) => `/citas/${id}`,
-    ESTADO:    (id: string) => `/citas/${id}/estado`,
+    BASE:        '/citas',
+    MIS_CITAS:   '/citas/mis-citas',
+    BY_ID:       (id: string) => `/citas/${id}`,
+    ESTADO:      (id: string) => `/citas/${id}/estado`,
+    REPROGRAMAR: (id: string) => `/citas/${id}/reprogramar`,
+  },
+  PAGOS: {
+    BASE:    '/pagos',
+    BY_ID:   (id: string) => `/pagos/${id}`,
+    BY_CITA: (id: string) => `/pagos/cita/${id}`,
+  },
+  FICHAS: {
+    BASE:    '/fichas',
+    BY_CITA: (id: string) => `/fichas/cita/${id}`,
+  },
+  CHECKLIST: {
+    ITEMS:      '/checklist/items',
+    ITEM_BY_ID: (id: string) => `/checklist/items/${id}`,
+    BY_CITA:    (id: string) => `/checklist/cita/${id}`,
+    TOGGLE:     (idCita: string, idItem: string) => `/checklist/cita/${idCita}/item/${idItem}`,
+  },
+  FOTOS: {
+    BY_CITA: (id: string) => `/fotos/cita/${id}`,
+    BY_ID:   (id: string) => `/fotos/${id}`,
+  },
+  INSUMOS: {
+    BASE:                '/insumos',
+    BY_ID:               (id: string) => `/insumos/${id}`,
+    CITA_INSUMOS:        (idCita: string) => `/insumos/cita/${idCita}`,
+    CITA_REGISTER:       '/insumos/cita',
+    CITA_INSUMO_UPDATE:  (id: string) => `/insumos/cita/${id}`,
   },
   HEALTH: '/health',
 } as const

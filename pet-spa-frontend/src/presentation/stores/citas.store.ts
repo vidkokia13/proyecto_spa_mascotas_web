@@ -104,12 +104,28 @@ export const useCitasStore = defineStore('citas', () => {
     }
   }
 
+  async function reprogramar(id: string, fechaHoraInicio: string): Promise<void> {
+    loading.value = true
+    error.value   = null
+    try {
+      const res = await citaDatasource.reprogramar(id, { fechaHoraInicio })
+      const idx = citas.value.findIndex(c => c.id_cita === id)
+      if (idx !== -1) citas.value[idx] = res.cita
+      if (selected.value?.id_cita === id) selected.value = res.cita
+    } catch (e) {
+      error.value = extractErrorMessage(e)
+      throw e
+    } finally {
+      loading.value = false
+    }
+  }
+
   function clearError(): void { error.value = null }
   function clearSelected(): void { selected.value = null }
 
   return {
     citas, selected, loading, error,
-    fetchMisCitas, fetchRango, fetchOne, create, cambiarEstado, update,
+    fetchMisCitas, fetchRango, fetchOne, create, cambiarEstado, update, reprogramar,
     clearError, clearSelected,
   }
 })
