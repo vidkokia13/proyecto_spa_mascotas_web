@@ -41,16 +41,24 @@ const navGroups = computed<NavGroup[]>(() => {
       {
         label: 'Agenda',
         items: [
-          { name: ROUTE_NAMES.AGENDA_CITAS,    route: '/agenda/citas',    icon: 'calendar', label: 'Citas'      },
-          { name: ROUTE_NAMES.AGENDA_HORARIOS, route: '/agenda/horarios', icon: 'clock',    label: 'Horarios'   },
-          { name: ROUTE_NAMES.AGENDA_BLOQUEOS, route: '/agenda/bloqueos', icon: 'block',    label: 'Bloqueos'   },
+          { name: ROUTE_NAMES.AGENDA_CALENDARIO, route: '/agenda/calendario', icon: 'calendar-grid', label: 'Calendario' },
+          { name: ROUTE_NAMES.AGENDA_CITAS,      route: '/agenda/citas',      icon: 'calendar',      label: 'Citas'      },
+          { name: ROUTE_NAMES.AGENDA_HORARIOS,   route: '/agenda/horarios',   icon: 'clock',         label: 'Horarios'   },
+          { name: ROUTE_NAMES.AGENDA_BLOQUEOS,   route: '/agenda/bloqueos',   icon: 'block',         label: 'Bloqueos'   },
         ],
       },
       {
         label: 'Catálogo',
         items: [
-          { name: ROUTE_NAMES.ADMIN_SERVICIOS, route: '/admin/servicios', icon: 'tag',      label: 'Servicios'  },
-          { name: ROUTE_NAMES.ADMIN_INSUMOS,   route: '/admin/insumos',   icon: 'box',      label: 'Insumos'    },
+          { name: ROUTE_NAMES.ADMIN_SERVICIOS,   route: '/admin/servicios',   icon: 'tag',           label: 'Servicios'  },
+          { name: ROUTE_NAMES.ADMIN_INSUMOS,     route: '/admin/insumos',     icon: 'box',           label: 'Insumos'    },
+          { name: ROUTE_NAMES.ADMIN_PROMOCIONES, route: '/admin/promociones', icon: 'promo',         label: 'Promociones' },
+        ],
+      },
+      {
+        label: 'Caja',
+        items: [
+          { name: ROUTE_NAMES.ADMIN_CAJA, route: '/admin/caja', icon: 'cash', label: 'Caja' },
         ],
       },
     ]
@@ -60,10 +68,12 @@ const navGroups = computed<NavGroup[]>(() => {
     return [
       {
         items: [
-          { name: ROUTE_NAMES.RECEPCION_DASHBOARD, route: '/recepcion/dashboard', icon: 'home',     label: 'Panel'        },
-          { name: ROUTE_NAMES.AGENDA_CITAS,        route: '/agenda/citas',        icon: 'calendar', label: 'Agenda'       },
-          { name: ROUTE_NAMES.AGENDA_BLOQUEOS,     route: '/agenda/bloqueos',     icon: 'block',    label: 'Bloqueos'     },
-          { name: ROUTE_NAMES.CHANGE_PASSWORD,     route: '/change-password',     icon: 'lock',     label: 'Seguridad'    },
+          { name: ROUTE_NAMES.RECEPCION_DASHBOARD,  route: '/recepcion/dashboard',  icon: 'home',          label: 'Panel'        },
+          { name: ROUTE_NAMES.AGENDA_CALENDARIO,    route: '/agenda/calendario',    icon: 'calendar-grid', label: 'Calendario'   },
+          { name: ROUTE_NAMES.AGENDA_CITAS,         route: '/agenda/citas',         icon: 'calendar',      label: 'Agenda'       },
+          { name: ROUTE_NAMES.AGENDA_BLOQUEOS,      route: '/agenda/bloqueos',      icon: 'block',         label: 'Bloqueos'     },
+          { name: ROUTE_NAMES.ADMIN_CAJA,           route: '/admin/caja',           icon: 'cash',          label: 'Caja'         },
+          { name: ROUTE_NAMES.CHANGE_PASSWORD,      route: '/change-password',      icon: 'lock',          label: 'Seguridad'    },
         ],
       },
     ]
@@ -73,9 +83,10 @@ const navGroups = computed<NavGroup[]>(() => {
     return [
       {
         items: [
-          { name: ROUTE_NAMES.EMPLOYEE_DASHBOARD, route: '/employee/dashboard', icon: 'home',     label: 'Panel'            },
-          { name: ROUTE_NAMES.AGENDA_CITAS,       route: '/agenda/citas',       icon: 'calendar', label: 'Agenda'           },
-          { name: ROUTE_NAMES.CHANGE_PASSWORD,    route: '/change-password',    icon: 'lock',     label: 'Cambiar contraseña'},
+          { name: ROUTE_NAMES.EMPLOYEE_DASHBOARD,  route: '/employee/dashboard',  icon: 'home',          label: 'Panel'            },
+          { name: ROUTE_NAMES.AGENDA_CALENDARIO,   route: '/agenda/calendario',   icon: 'calendar-grid', label: 'Calendario'       },
+          { name: ROUTE_NAMES.AGENDA_CITAS,        route: '/agenda/citas',        icon: 'calendar',      label: 'Agenda'           },
+          { name: ROUTE_NAMES.CHANGE_PASSWORD,     route: '/change-password',     icon: 'lock',          label: 'Cambiar contraseña'},
         ],
       },
     ]
@@ -182,6 +193,19 @@ const navGroups = computed<NavGroup[]>(() => {
             <!-- box -->
             <svg v-else-if="item.icon === 'box'" class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            </svg>
+            <!-- calendar-grid (calendario visual) -->
+            <svg v-else-if="item.icon === 'calendar-grid'" class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h.01M12 12h.01M15 12h.01M9 16h.01M12 16h.01M15 16h.01" />
+            </svg>
+            <!-- promo (ticket/discount) -->
+            <svg v-else-if="item.icon === 'promo'" class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+            </svg>
+            <!-- cash (caja) -->
+            <svg v-else-if="item.icon === 'cash'" class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
             </svg>
             <!-- user (fallback) -->
             <svg v-else class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">

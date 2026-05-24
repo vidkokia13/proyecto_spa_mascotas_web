@@ -208,13 +208,29 @@ export interface Pago {
   creado_en:      string
 }
 export interface CreatePagoPayload {
-  idCita:      string
-  monto:       number
-  metodo:      MetodoPago
-  referencia?: string | null
+  idCita:           string
+  monto:            number
+  metodo:           MetodoPago
+  referencia?:      string | null
+  idPromocion?:     string | null
+  codigoPromocion?: string | null
 }
 export interface PagoListResponse { pagos: Pago[] }
 export interface PagoResponse     { pago:  Pago  }
+
+export interface Recibo {
+  id_cita:           string
+  nombre_cliente:    string
+  nombre_mascota:    string
+  nombre_servicio:   string
+  fecha_hora_inicio: string
+  estado:            string
+  total_pagado:      number
+  total_descuentos:  number
+  pagos:             Pago[]
+  emitido_en:        string
+}
+export interface ReciboResponse { recibo: Recibo }
 
 // ── Fichas técnicas ───────────────────────────────────────────────────────────
 export interface FichaTecnica {
@@ -328,3 +344,92 @@ export interface UpdateCitaInsumoPayload {
   cantidadDevuelta?: number
   desperdicio?:      number
 }
+
+// ── Promociones ───────────────────────────────────────────────────────────────
+export type TipoPromocion = 'porcentaje' | 'monto_fijo'
+
+export interface Promocion {
+  id_promocion:  string
+  nombre:        string
+  descripcion:   string | null
+  tipo:          TipoPromocion
+  valor:         number
+  codigo:        string | null
+  fecha_inicio:  string
+  fecha_fin:     string
+  activo:        boolean
+  creado_por:    string | null
+  creado_en:     string
+}
+export interface CreatePromocionPayload {
+  nombre:        string
+  descripcion?:  string | null
+  tipo:          TipoPromocion
+  valor:         number
+  codigo?:       string | null
+  fechaInicio:   string
+  fechaFin:      string
+}
+export interface UpdatePromocionPayload extends Partial<CreatePromocionPayload> {
+  activo?: boolean
+}
+export interface VerificarPromocionPayload {
+  codigo:     string
+  montoBase:  number
+}
+export interface VerificarPromocionResponse {
+  promocion:   Promocion
+  montoBase:   number
+  descuento:   number
+  montoFinal:  number
+}
+export interface PromocionListResponse { promociones: Promocion[] }
+export interface PromocionResponse     { promocion:   Promocion }
+
+// ── Caja ──────────────────────────────────────────────────────────────────────
+export interface ResumenMetodo {
+  metodo:           string
+  total:            number
+  total_descuentos: number
+  cantidad:         number
+}
+export interface ResumenPago {
+  id_pago:        string
+  id_cita:        string
+  monto:          number
+  descuento:      number
+  metodo:         string
+  referencia:     string | null
+  nombre_cliente: string
+  nombre_mascota: string
+  nombre_servicio: string
+  creado_en:      string
+}
+export interface ResumenCaja {
+  fecha:             string
+  ya_cerrada:        boolean
+  total_general:     number
+  total_descuentos:  number
+  num_pagos:         number
+  num_citas:         number
+  por_metodo:        ResumenMetodo[]
+  pagos:             ResumenPago[]
+  cierre?:           CierreCaja | null
+}
+export interface CierreCaja {
+  id_cierre:           string
+  fecha:               string
+  total_efectivo:      number
+  total_qr:            number
+  total_transferencia: number
+  total_general:       number
+  total_descuentos:    number
+  num_pagos:           number
+  num_citas:           number
+  cerrado_por:         string | null
+  cerrado_en:          string
+  notas:               string | null
+}
+export interface ResumenCajaResponse    { resumen:  ResumenCaja  }
+export interface CierreCajaResponse     { cierre:   CierreCaja   }
+export interface HistorialCierresResponse { cierres: CierreCaja[] }

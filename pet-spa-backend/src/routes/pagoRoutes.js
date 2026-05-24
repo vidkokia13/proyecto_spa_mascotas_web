@@ -12,8 +12,9 @@ const router = Router();
 router.use(authRequired);
 router.use(requireRole('admin','jefe','recepcion'));
 
-router.post('/',            validate(pagoValidators.create, 'body'),   asyncHandler(pagoController.registrar));
-router.get('/cita/:idCita',                                             asyncHandler(pagoController.listByCita));
-router.delete('/:id',       requireRole('admin','jefe'),               asyncHandler(pagoController.eliminar));
+router.post('/',                    validate(pagoValidators.create, 'body'), asyncHandler(pagoController.registrar));
+router.get('/cita/:idCita',                                                   asyncHandler(pagoController.listByCita));
+router.get('/recibo/:idCita',                                                 asyncHandler(pagoController.recibo));
+router.delete('/:id',               requireRole('admin','jefe'),              asyncHandler(pagoController.eliminar));
 
 module.exports = router;
