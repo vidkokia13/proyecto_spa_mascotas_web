@@ -116,12 +116,13 @@ async function updateEstado(idCita, estado, client = db) {
 
 async function update(idCita, fields, client = db) {
   const colMap = {
-    id_trabajador:    'id_trabajador',
-    fecha_hora_inicio:'fecha_hora_inicio',
-    fecha_hora_fin:   'fecha_hora_fin',
-    duracion_ajustada:'duracion_ajustada',
-    estado:           'estado',
-    notas:            'notas',
+    id_trabajador:      'id_trabajador',
+    fecha_hora_inicio:  'fecha_hora_inicio',
+    fecha_hora_fin:     'fecha_hora_fin',
+    duracion_ajustada:  'duracion_ajustada',
+    estado:             'estado',
+    notas:              'notas',
+    motivo_cancelacion: 'motivo_cancelacion',
   };
   const setClauses = [];
   const values = [];

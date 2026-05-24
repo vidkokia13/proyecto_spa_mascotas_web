@@ -6,11 +6,15 @@ const db = require('../config/db');
 // All public-facing methods accept idUsuario; internally we join clientes.
 
 async function create({ idCliente, nombre, especie = 'perro', raza = null, tamano = 'mediano',
-  temperamento = 'tranquilo', tiempoExtraMin = 0, pesoKg = null, notas = null }, client = db) {
+  temperamento = 'tranquilo', fechaNacimiento = null, alergias = null,
+  tiempoExtraMin = 0, pesoKg = null, notas = null }, client = db) {
   const { rows } = await client.query(
-    `INSERT INTO mascotas (id_cliente, nombre, especie, raza, tamano, temperamento, tiempo_extra_min, peso_kg, notas)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
-    [idCliente, nombre, especie, raza, tamano, temperamento, tiempoExtraMin, pesoKg, notas],
+    `INSERT INTO mascotas
+       (id_cliente, nombre, especie, raza, tamano, temperamento,
+        fecha_nacimiento, alergias, tiempo_extra_min, peso_kg, notas)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
+    [idCliente, nombre, especie, raza, tamano, temperamento,
+      fechaNacimiento, alergias, tiempoExtraMin, pesoKg, notas],
   );
   return rows[0];
 }
@@ -45,7 +49,8 @@ async function findByClienteId(idCliente, client = db) {
 }
 
 async function update(idMascota, fields, client = db) {
-  const allowed = ['nombre','especie','raza','tamano','temperamento','tiempo_extra_min','peso_kg','notas','activo','foto_url'];
+  const allowed = ['nombre','especie','raza','tamano','temperamento','fecha_nacimiento',
+    'alergias','tiempo_extra_min','peso_kg','notas','activo','foto_url','carnet_vacunas_url'];
   const setClauses = [];
   const values = [];
   let i = 1;

@@ -5,7 +5,7 @@ const authRequired   = require('../middlewares/authRequired');
 const requireRole    = require('../middlewares/requireRole');
 const asyncHandler   = require('../utils/asyncHandler');
 const fotoController = require('../controllers/fotoController');
-const upload         = require('../middlewares/upload');
+const { upload }     = require('../middlewares/upload');
 
 const router = Router();
 router.use(authRequired);
