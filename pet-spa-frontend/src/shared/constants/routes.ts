@@ -7,12 +7,14 @@ export const ROUTE_NAMES = {
   FORBIDDEN:       'forbidden',
   NOT_FOUND:       'not-found',
 
-  ADMIN_DASHBOARD:   'admin-dashboard',
-  ADMIN_USERS:       'admin-users',
-  ADMIN_LOGS:        'admin-logs',
-  ADMIN_2FA_SETUP:   'admin-2fa-setup',
-  ADMIN_SERVICIOS:   'admin-servicios',
-  ADMIN_INSUMOS:     'admin-insumos',
+  ADMIN_DASHBOARD:    'admin-dashboard',
+  ADMIN_USERS:        'admin-users',
+  ADMIN_LOGS:         'admin-logs',
+  ADMIN_2FA_SETUP:    'admin-2fa-setup',
+  ADMIN_SERVICIOS:    'admin-servicios',
+  ADMIN_INSUMOS:      'admin-insumos',
+  ADMIN_PROMOCIONES:  'admin-promociones',
+  ADMIN_CAJA:         'admin-caja',
 
   CITA_DETALLE:      'cita-detalle',
 
@@ -26,9 +28,10 @@ export const ROUTE_NAMES = {
   CLIENT_CITAS:      'client-citas',
   CLIENT_NUEVA_CITA: 'client-nueva-cita',
 
-  AGENDA_CITAS:      'agenda-citas',
-  AGENDA_HORARIOS:   'agenda-horarios',
-  AGENDA_BLOQUEOS:   'agenda-bloqueos',
+  AGENDA_CITAS:       'agenda-citas',
+  AGENDA_HORARIOS:    'agenda-horarios',
+  AGENDA_BLOQUEOS:    'agenda-bloqueos',
+  AGENDA_CALENDARIO:  'agenda-calendario',
 } as const
 
 export const ROUTE_PATHS = {
@@ -43,8 +46,10 @@ export const ROUTE_PATHS = {
   ADMIN_USERS:       '/admin/users',
   ADMIN_LOGS:        '/admin/logs',
   ADMIN_2FA_SETUP:   '/admin/2fa-setup',
-  ADMIN_SERVICIOS:   '/admin/servicios',
-  ADMIN_INSUMOS:     '/admin/insumos',
+  ADMIN_SERVICIOS:    '/admin/servicios',
+  ADMIN_INSUMOS:      '/admin/insumos',
+  ADMIN_PROMOCIONES:  '/admin/promociones',
+  ADMIN_CAJA:         '/admin/caja',
 
   CITA_DETALLE:      '/citas/:id',
 
@@ -58,7 +63,8 @@ export const ROUTE_PATHS = {
   CLIENT_CITAS:      '/client/citas',
   CLIENT_NUEVA_CITA: '/client/nueva-cita',
 
-  AGENDA_CITAS:      '/agenda/citas',
-  AGENDA_HORARIOS:   '/agenda/horarios',
-  AGENDA_BLOQUEOS:   '/agenda/bloqueos',
+  AGENDA_CITAS:       '/agenda/citas',
+  AGENDA_HORARIOS:    '/agenda/horarios',
+  AGENDA_BLOQUEOS:    '/agenda/bloqueos',
+  AGENDA_CALENDARIO:  '/agenda/calendario',
 } as const

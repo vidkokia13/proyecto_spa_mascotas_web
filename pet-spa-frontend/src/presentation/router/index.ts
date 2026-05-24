@@ -89,6 +89,20 @@ const router = createRouter({
           meta: { requiresAuth: true, layout: 'dashboard' },
           beforeEnter: roleGuard([ROLES.ADMIN, ROLES.JEFE]),
         },
+        {
+          path: 'promociones',
+          name: ROUTE_NAMES.ADMIN_PROMOCIONES,
+          component: () => import('@/presentation/views/admin/PromocionesView.vue'),
+          meta: { requiresAuth: true, layout: 'dashboard' },
+          beforeEnter: roleGuard([ROLES.ADMIN, ROLES.JEFE]),
+        },
+        {
+          path: 'caja',
+          name: ROUTE_NAMES.ADMIN_CAJA,
+          component: () => import('@/presentation/views/admin/CajaView.vue'),
+          meta: { requiresAuth: true, layout: 'dashboard' },
+          beforeEnter: roleGuard([ROLES.ADMIN, ROLES.JEFE, ROLES.RECEPCION]),
+        },
       ],
     },
 
@@ -127,6 +141,13 @@ const router = createRouter({
           meta: { requiresAuth: true, layout: 'dashboard' },
           beforeEnter: roleGuard([ROLES.ADMIN, ROLES.JEFE, ROLES.RECEPCION]),
         },
+        {
+          path: 'calendario',
+          name: ROUTE_NAMES.AGENDA_CALENDARIO,
+          component: () => import('@/presentation/views/agenda/CalendarioView.vue'),
+          meta: { requiresAuth: true, layout: 'dashboard' },
+          beforeEnter: roleGuard([ROLES.ADMIN, ROLES.JEFE, ROLES.RECEPCION, ROLES.TRABAJADOR]),
+        },
       ],
     },
 
@@ -145,6 +166,9 @@ const router = createRouter({
         },
       ],
     },
+
+    // ─── Caja (admin redirect from /admin/caja to /admin section) ────────────
+    // Note: /admin/caja is already registered under admin children above.
 
     // ─── Employee (groomer) ───────────────────────────────────────────────────
     {

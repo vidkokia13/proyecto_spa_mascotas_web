@@ -162,20 +162,46 @@ async function submitInsumo() {
 }
 
 // ── Pagos ──────────────────────────────────────────────────────────────────────
-const showPagoForm = ref(false)
-const pagoForm = ref({ monto: '', metodo: 'efectivo' as MetodoPago, referencia: '' })
+const showPagoForm   = ref(false)
+const pagoForm       = ref({ monto: '', metodo: 'efectivo' as MetodoPago, referencia: '' })
+const promoCodigo    = ref('')
+const promoVerif     = ref<{ descuento: number; montoFinal: number; nombre: string } | null>(null)
+const promoLoading   = ref(false)
+const promoError     = ref<string | null>(null)
+
+async function verificarPromo() {
+  const monto = parseFloat(pagoForm.value.monto)
+  if (!promoCodigo.value || !monto) return
+  promoLoading.value = true; promoError.value = null; promoVerif.value = null
+  try {
+    const { data } = await import('@/infrastructure/api/axios.instance').then(m =>
+      m.default.post('/promociones/verificar', { codigo: promoCodigo.value.toUpperCase(), montoBase: monto })
+    )
+    promoVerif.value = { descuento: data.descuento, montoFinal: data.montoFinal, nombre: data.promocion.nombre }
+  } catch (e: any) {
+    promoError.value = e?.response?.data?.message ?? 'Código inválido o expirado'
+  } finally {
+    promoLoading.value = false
+  }
+}
+
+function clearPromo() {
+  promoCodigo.value = ''; promoVerif.value = null; promoError.value = null
+}
 
 async function submitPago() {
   if (!pagoForm.value.monto) return
   const ok = await savePago({
-    idCita:     idCita.value,
-    monto:      parseFloat(pagoForm.value.monto),
-    metodo:     pagoForm.value.metodo,
-    referencia: pagoForm.value.referencia || null,
+    idCita:           idCita.value,
+    monto:            parseFloat(pagoForm.value.monto),
+    metodo:           pagoForm.value.metodo,
+    referencia:       pagoForm.value.referencia || null,
+    codigoPromocion:  promoVerif.value ? promoCodigo.value.toUpperCase() : null,
   })
   if (ok) {
     showPagoForm.value = false
     pagoForm.value = { monto: '', metodo: 'efectivo', referencia: '' }
+    clearPromo()
   }
 }
 
@@ -505,7 +531,8 @@ const totalPagado = computed(() => detalleStore.pagos.reduce((s, p) => s + Numbe
             <div>
               <label class="block text-xs text-gray-500 mb-1">Monto ($)</label>
               <input v-model="pagoForm.monto" type="number" min="1" step="0.01" placeholder="0.00"
-                class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none" />
+                class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none"
+                @change="clearPromo" />
             </div>
             <div>
               <label class="block text-xs text-gray-500 mb-1">Método</label>
@@ -520,6 +547,30 @@ const totalPagado = computed(() => detalleStore.pagos.reduce((s, p) => s + Numbe
               <label class="block text-xs text-gray-500 mb-1">Referencia (opcional)</label>
               <input v-model="pagoForm.referencia" type="text" placeholder="N° transferencia, comprobante…"
                 class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none" />
+            </div>
+            <!-- Promoción -->
+            <div class="col-span-2">
+              <label class="block text-xs text-gray-500 mb-1">Código de promoción (opcional)</label>
+              <div class="flex gap-2">
+                <input v-model="promoCodigo" type="text" maxlength="30" placeholder="Ej: VERANO2025"
+                  class="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none uppercase"
+                  @input="promoCodigo = promoCodigo.toUpperCase(); promoVerif = null; promoError = null" />
+                <BaseButton size="sm" variant="secondary"
+                  :disabled="!promoCodigo || !pagoForm.monto || promoLoading"
+                  @click="verificarPromo">
+                  {{ promoLoading ? '…' : 'Verificar' }}
+                </BaseButton>
+              </div>
+              <!-- Resultado verificación -->
+              <div v-if="promoVerif"
+                class="mt-2 p-2 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-sm">
+                <p class="font-semibold text-green-700 dark:text-green-400">{{ promoVerif.nombre }}</p>
+                <p class="text-green-600 dark:text-green-400">
+                  Descuento: -${{ Number(promoVerif.descuento).toLocaleString('es-CL') }} →
+                  Total: ${{ Number(promoVerif.montoFinal).toLocaleString('es-CL') }}
+                </p>
+              </div>
+              <p v-if="promoError" class="mt-1 text-xs text-red-500">{{ promoError }}</p>
             </div>
           </div>
           <BaseButton size="sm" :disabled="!pagoForm.monto || detalleStore.loading" @click="submitPago">

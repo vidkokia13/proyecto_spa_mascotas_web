@@ -73,4 +73,13 @@ async function cancelarPorCliente(req, res) {
   res.json({ cita: updated });
 }
 
-module.exports = { crear, getOne, misCitas, listRango, cambiarEstado, actualizar, reprogramar, cancelarPorCliente };
+async function calendario(req, res) {
+  const { fecha, rango } = req.query;
+  const data = await citaService.getCalendario({
+    fecha: fecha || new Date().toISOString().slice(0, 10),
+    rango: rango || 'dia',
+  });
+  res.json(data);
+}
+
+module.exports = { crear, getOne, misCitas, listRango, cambiarEstado, actualizar, reprogramar, cancelarPorCliente, calendario };

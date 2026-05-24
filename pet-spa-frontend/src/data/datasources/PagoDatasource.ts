@@ -1,6 +1,6 @@
 import http from '@/infrastructure/api/axios.instance'
 import { API_ENDPOINTS } from '@/core/config/api.config'
-import type { CreatePagoPayload, PagoListResponse, PagoResponse } from '@/shared/types/agenda.types'
+import type { CreatePagoPayload, PagoListResponse, PagoResponse, ReciboResponse } from '@/shared/types/agenda.types'
 
 export const pagoDatasource = {
   async listByCita(idCita: string): Promise<PagoListResponse> {
@@ -15,5 +15,10 @@ export const pagoDatasource = {
 
   async remove(id: string): Promise<void> {
     await http.delete(API_ENDPOINTS.PAGOS.BY_ID(id))
+  },
+
+  async getRecibo(idCita: string): Promise<ReciboResponse> {
+    const { data } = await http.get<ReciboResponse>(API_ENDPOINTS.PAGOS.RECIBO(idCita))
+    return data
   },
 }

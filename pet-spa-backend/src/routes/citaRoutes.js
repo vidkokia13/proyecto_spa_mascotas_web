@@ -14,6 +14,9 @@ router.use(authRequired);
 // Cliente: see own appointments
 router.get('/mis-citas', asyncHandler(citaController.misCitas));
 
+// Calendario agrupado por groomer (dia o semana)
+router.get('/calendario', requireRole('admin','jefe','recepcion','trabajador'), asyncHandler(citaController.calendario));
+
 // Staff: list appointments by date range
 router.get('/', requireRole('admin','jefe','recepcion','trabajador'), validate(citaValidators.queryRango, 'query'), asyncHandler(citaController.listRango));
 

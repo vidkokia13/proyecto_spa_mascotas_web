@@ -140,4 +140,16 @@ async function update(idCita, fields, client = db) {
   return rows[0] || null;
 }
 
-module.exports = { create, findById, findByCliente, findInRange, countOverlaps, countSpaOverlaps, updateEstado, update };
+async function findCalendario(fechaInicio, fechaFin, client = db) {
+  const { rows } = await client.query(
+    `${BASE_SELECT}
+     WHERE c.fecha_hora_inicio >= $1
+       AND c.fecha_hora_inicio <  $2
+       AND c.estado <> 'cancelada'
+     ORDER BY t.id_trabajador NULLS LAST, c.fecha_hora_inicio`,
+    [fechaInicio, fechaFin],
+  );
+  return rows;
+}
+
+module.exports = { create, findById, findByCliente, findInRange, countOverlaps, countSpaOverlaps, updateEstado, update, findCalendario };

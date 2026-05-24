@@ -266,4 +266,32 @@ async function cancelarCitaPorCliente(idCita, { motivo, detalle }, idUsuario, ip
   return updated;
 }
 
-module.exports = { crearCita, getCita, getMisCitas, getCitasRango, cambiarEstado, actualizarCita, reprogramarCita, cancelarCitaPorCliente };
+async function getCalendario({ fecha, rango = 'dia' }) {
+  const inicio = new Date(`${fecha}T00:00:00`);
+  const fin    = new Date(inicio);
+  if (rango === 'semana') fin.setDate(fin.getDate() + 7);
+  else                    fin.setDate(fin.getDate() + 1);
+
+  const citas = await citaRepo.findCalendario(inicio, fin);
+
+  // Agrupar por trabajador
+  const groomerMap = new Map();
+  const sinGroomer = [];
+
+  for (const c of citas) {
+    if (!c.id_trabajador) { sinGroomer.push(c); continue; }
+    if (!groomerMap.has(c.id_trabajador)) {
+      groomerMap.set(c.id_trabajador, { id_trabajador: c.id_trabajador, nombre: c.nombre_trabajador, citas: [] });
+    }
+    groomerMap.get(c.id_trabajador).citas.push(c);
+  }
+
+  return {
+    fecha,
+    rango,
+    groomers:   Array.from(groomerMap.values()),
+    sin_groomer: sinGroomer,
+  };
+}
+
+module.exports = { crearCita, getCita, getMisCitas, getCitasRango, cambiarEstado, actualizarCita, reprogramarCita, cancelarCitaPorCliente, getCalendario };
