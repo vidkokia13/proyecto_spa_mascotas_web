@@ -136,12 +136,43 @@ export const useCitasStore = defineStore('citas', () => {
     }
   }
 
+  async function fetchMiAgenda(params?: { fechaInicio?: string; fechaFin?: string }): Promise<void> {
+    loading.value = true
+    error.value   = null
+    try {
+      const res   = await citaDatasource.miAgenda(params)
+      citas.value = res.citas
+    } catch (e) {
+      error.value = extractErrorMessage(e)
+      throw e
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function cerrar(id: string): Promise<void> {
+    loading.value = true
+    error.value   = null
+    try {
+      const res = await citaDatasource.cerrar(id)
+      const idx = citas.value.findIndex(c => c.id_cita === id)
+      if (idx !== -1) citas.value[idx] = res.cita
+      if (selected.value?.id_cita === id) selected.value = res.cita
+    } catch (e) {
+      error.value = extractErrorMessage(e)
+      throw e
+    } finally {
+      loading.value = false
+    }
+  }
+
   function clearError(): void { error.value = null }
   function clearSelected(): void { selected.value = null }
 
   return {
     citas, selected, loading, error,
-    fetchMisCitas, fetchRango, fetchOne, create, cambiarEstado, update, reprogramar, cancelar,
+    fetchMisCitas, fetchRango, fetchMiAgenda, fetchOne, create,
+    cambiarEstado, update, reprogramar, cancelar, cerrar,
     clearError, clearSelected,
   }
 })

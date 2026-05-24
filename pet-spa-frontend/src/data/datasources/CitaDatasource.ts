@@ -50,4 +50,14 @@ export const citaDatasource = {
     const { data } = await http.patch<CitaResponse>(API_ENDPOINTS.CITAS.CANCELAR(id), payload)
     return data
   },
+
+  async miAgenda(params?: { fechaInicio?: string; fechaFin?: string }): Promise<CitaListResponse> {
+    const { data } = await http.get<CitaListResponse>(API_ENDPOINTS.CITAS.MI_AGENDA, { params })
+    return data
+  },
+
+  async cerrar(id: string): Promise<CitaResponse> {
+    const { data } = await http.post<CitaResponse>(API_ENDPOINTS.CITAS.CERRAR(id))
+    return data
+  },
 }
