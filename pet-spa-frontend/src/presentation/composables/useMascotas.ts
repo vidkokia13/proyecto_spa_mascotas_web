@@ -43,5 +43,16 @@ export function useMascotas() {
     }
   }
 
-  return { store, loadAll, createMascota, updateMascota, removeMascota }
+  async function subirCarnet(id: string, file: File): Promise<boolean> {
+    try {
+      await store.subirCarnet(id, file)
+      uiStore.showToast('Carnet de vacunas subido correctamente', 'success')
+      return true
+    } catch {
+      uiStore.showToast(store.error ?? 'Error al subir el carnet', 'error')
+      return false
+    }
+  }
+
+  return { store, loadAll, createMascota, updateMascota, removeMascota, subirCarnet }
 }

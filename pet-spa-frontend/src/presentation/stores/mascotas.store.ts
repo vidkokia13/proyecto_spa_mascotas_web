@@ -85,11 +85,28 @@ export const useMascotasStore = defineStore('mascotas', () => {
     }
   }
 
+  async function subirCarnet(id: string, file: File): Promise<Mascota> {
+    loading.value = true
+    error.value   = null
+    try {
+      const res = await mascotaDatasource.subirCarnet(id, file)
+      const idx = mascotas.value.findIndex(m => m.id_mascota === id)
+      if (idx !== -1) mascotas.value[idx] = res.mascota
+      if (selected.value?.id_mascota === id) selected.value = res.mascota
+      return res.mascota
+    } catch (e) {
+      error.value = extractErrorMessage(e)
+      throw e
+    } finally {
+      loading.value = false
+    }
+  }
+
   function clearError(): void { error.value = null }
   function clearSelected(): void { selected.value = null }
 
   return {
     mascotas, selected, loading, error,
-    fetchAll, fetchOne, create, update, remove, clearError, clearSelected,
+    fetchAll, fetchOne, create, update, remove, subirCarnet, clearError, clearSelected,
   }
 })

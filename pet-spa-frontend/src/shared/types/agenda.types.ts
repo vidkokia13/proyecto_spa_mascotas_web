@@ -1,34 +1,48 @@
 // ── Mascotas ────────────────────────────────────────────────────────────────
+export type Temperamento = 'tranquilo' | 'nervioso' | 'agresivo' | 'inquieto'
+export type TamanoMascota = 'pequeno' | 'mediano' | 'grande' | 'gigante'
+
 export interface Mascota {
-  id_mascota:      string
-  id_cliente:      string
-  nombre:          string
-  especie:         string
-  raza:            string | null
-  tamano:          'pequeno' | 'mediano' | 'grande' | 'gigante'
-  temperamento:    'tranquilo' | 'nervioso' | 'agresivo'
-  tiempo_extra_min: number
-  peso_kg:         number | null
-  notas:           string | null
-  activo:          boolean
-  creado_en:       string
+  id_mascota:         string
+  id_cliente:         string
+  nombre:             string
+  especie:            string
+  raza:               string | null
+  tamano:             TamanoMascota
+  temperamento:       Temperamento
+  fecha_nacimiento:   string | null
+  alergias:           string | null
+  carnet_vacunas_url: string | null
+  tiempo_extra_min:   number
+  peso_kg:            number | null
+  notas:              string | null
+  activo:             boolean
+  creado_en:          string
 }
 
 export interface CreateMascotaPayload {
-  nombre:          string
-  especie?:        string
-  raza?:           string | null
-  tamano?:         Mascota['tamano']
-  temperamento?:   Mascota['temperamento']
-  tiempoExtraMin?: number
-  pesoKg?:         number | null
-  notas?:          string | null
+  nombre:           string
+  especie?:         string
+  raza?:            string | null
+  tamano?:          TamanoMascota
+  temperamento?:    Temperamento
+  fechaNacimiento?: string | null
+  alergias?:        string | null
+  tiempoExtraMin?:  number
+  pesoKg?:          number | null
+  notas?:           string | null
 }
 
 export interface UpdateMascotaPayload extends Partial<CreateMascotaPayload> {}
 
 export interface MascotaListResponse { mascotas: Mascota[] }
 export interface MascotaResponse     { mascota:  Mascota }
+
+export interface CancelarCitaPayload {
+  motivo:         'salud' | 'tiempo' | 'emergencia' | 'otro'
+  detalle?:       string | null
+  aceptaPolitica: true
+}
 
 // ── Servicios ────────────────────────────────────────────────────────────────
 export interface Servicio {

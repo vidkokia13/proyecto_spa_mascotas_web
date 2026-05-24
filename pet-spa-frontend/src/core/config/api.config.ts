@@ -23,8 +23,9 @@ export const API_ENDPOINTS = {
     LOGS: '/audit-log',
   },
   MASCOTAS: {
-    BASE:  '/mascotas',
-    BY_ID: (id: string) => `/mascotas/${id}`,
+    BASE:   '/mascotas',
+    BY_ID:  (id: string) => `/mascotas/${id}`,
+    CARNET: (id: string) => `/mascotas/${id}/carnet`,
   },
   SERVICIOS: {
     BASE:  '/servicios',
@@ -48,6 +49,7 @@ export const API_ENDPOINTS = {
     BY_ID:       (id: string) => `/citas/${id}`,
     ESTADO:      (id: string) => `/citas/${id}/estado`,
     REPROGRAMAR: (id: string) => `/citas/${id}/reprogramar`,
+    CANCELAR:    (id: string) => `/citas/${id}/cancelar`,
   },
   PAGOS: {
     BASE:    '/pagos',
