@@ -240,16 +240,20 @@ export interface FichaTecnica {
   condicion_piel: string | null
   observaciones:  string | null
   peso_actual:    number | null
+  estado_ingreso: string | null
+  recomendaciones: string | null
   creado_por:     string | null
   creado_en:      string
   actualizado_en: string
 }
 export interface UpsertFichaPayload {
-  idCita:         string
-  estadoPelaje?:  string | null
-  condicionPiel?: string | null
-  observaciones?: string | null
-  pesoActual?:    number | null
+  idCita:          string
+  estadoPelaje?:   string | null
+  condicionPiel?:  string | null
+  observaciones?:  string | null
+  pesoActual?:     number | null
+  estadoIngreso?:  string | null
+  recomendaciones?: string | null
 }
 export interface FichaResponse { ficha: FichaTecnica }
 
