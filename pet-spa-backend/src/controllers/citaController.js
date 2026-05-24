@@ -82,4 +82,17 @@ async function calendario(req, res) {
   res.json(data);
 }
 
-module.exports = { crear, getOne, misCitas, listRango, cambiarEstado, actualizar, reprogramar, cancelarPorCliente, calendario };
+async function miAgenda(req, res) {
+  const { fechaInicio, fechaFin } = req.query;
+  const citas = await citaService.getMiAgenda(req.user.id, { fechaInicio, fechaFin });
+  res.json({ citas });
+}
+
+async function cerrarServicio(req, res) {
+  const updated = await citaService.cerrarServicio(
+    req.params.id, req.user.id, req.user.rol, req.ip,
+  );
+  res.json({ cita: updated });
+}
+
+module.exports = { crear, getOne, misCitas, listRango, cambiarEstado, actualizar, reprogramar, cancelarPorCliente, calendario, miAgenda, cerrarServicio };

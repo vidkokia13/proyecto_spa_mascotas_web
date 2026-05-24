@@ -71,7 +71,10 @@ async function notificarCitaCancelada({ email, nombreCliente, nombreMascota, nom
   });
 }
 
-async function notificarCitaCompletada({ email, nombreCliente, nombreMascota, nombreServicio }) {
+async function notificarCitaCompletada({ email, nombreCliente, nombreMascota, nombreServicio, recomendaciones = null }) {
+  const seccionRecomendaciones = recomendaciones
+    ? `<p><strong>Recomendaciones del groomer:</strong></p><blockquote style="border-left:4px solid #7c3aed;padding-left:12px;color:#555">${recomendaciones}</blockquote>`
+    : '';
   await sendMail({
     to: email,
     subject: '🐾 El servicio de tu mascota finalizó — Pet Spa',
@@ -79,6 +82,7 @@ async function notificarCitaCompletada({ email, nombreCliente, nombreMascota, no
       <h2>Hola ${nombreCliente},</h2>
       <p>El servicio de <strong>${nombreMascota}</strong> (<em>${nombreServicio}</em>) ha sido <strong>completado</strong>.</p>
       <p>¡Tu mascota está lista para ser recogida!</p>
+      ${seccionRecomendaciones}
       <p>Gracias por confiar en Pet Spa. 🐾</p>
     `,
   });
@@ -102,9 +106,27 @@ async function notificarCitaReprogramada({ email, nombreCliente, nombreMascota, 
   });
 }
 
+async function notificarCancelacion({ email, nombreCliente, nombreMascota, nombreServicio, motivo }) {
+  await sendMail({
+    to: email,
+    subject: '❌ Has cancelado tu cita — Pet Spa',
+    html: `
+      <h2>Hola ${nombreCliente},</h2>
+      <p>Tu cita ha sido <strong>cancelada</strong> según tu solicitud.</p>
+      <ul>
+        <li><strong>Mascota:</strong> ${nombreMascota}</li>
+        <li><strong>Servicio:</strong> ${nombreServicio}</li>
+        <li><strong>Motivo:</strong> ${motivo}</li>
+      </ul>
+      <p>Si deseas reagendar, ingresa a tu cuenta o contáctanos.</p>
+    `,
+  });
+}
+
 module.exports = {
   notificarCitaConfirmada,
   notificarCitaCancelada,
   notificarCitaCompletada,
   notificarCitaReprogramada,
+  notificarCancelacion,
 };

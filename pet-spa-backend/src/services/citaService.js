@@ -8,6 +8,9 @@ const horarioRepo         = require('../repositories/horarioRepository');
 const bloqueoRepo         = require('../repositories/bloqueoRepository');
 const disponibilidadRepo  = require('../repositories/disponibilidadRepository');
 const clientRepo          = require('../repositories/clientRepository');
+const workerRepo          = require('../repositories/workerRepository');
+const checklistRepo       = require('../repositories/checklistRepository');
+const fichaRepo           = require('../repositories/fichaRepository');
 const { calcularDuracion } = require('./agendaService');
 const auditService        = require('./auditService');
 const notifService        = require('./notificationService');
@@ -294,4 +297,67 @@ async function getCalendario({ fecha, rango = 'dia' }) {
   };
 }
 
-module.exports = { crearCita, getCita, getMisCitas, getCitasRango, cambiarEstado, actualizarCita, reprogramarCita, cancelarCitaPorCliente, getCalendario };
+// ── Módulo 6: Agenda personal del groomer ─────────────────────────────────────
+async function getMiAgenda(idUsuario, { fechaInicio, fechaFin } = {}) {
+  const worker = await workerRepo.findByUserId(idUsuario);
+  if (!worker) throw new AppError('Perfil de trabajador no encontrado.', 404, 'WORKER_NOT_FOUND');
+
+  const inicio = fechaInicio ? new Date(fechaInicio) : new Date();
+  if (!fechaFin) {
+    const fin = new Date(inicio);
+    fin.setDate(fin.getDate() + 1);
+    return citaRepo.findInRange(inicio, fin, { idTrabajador: worker.id_trabajador });
+  }
+  return citaRepo.findInRange(inicio, new Date(fechaFin), { idTrabajador: worker.id_trabajador });
+}
+
+// ── Módulo 6: Cierre atómico del servicio ────────────────────────────────────
+async function cerrarServicio(idCita, idUsuario, rol, ipAddress = null) {
+  const cita = await citaRepo.findById(idCita);
+  if (!cita) throw new AppError('Cita no encontrada.', 404, 'CITA_NOT_FOUND');
+
+  // Sólo el groomer asignado (o admin/jefe) puede cerrar
+  if (rol === 'trabajador' && cita.id_trabajador !== idUsuario) {
+    throw new AppError('Solo puedes cerrar tus propias citas.', 403, 'FORBIDDEN');
+  }
+
+  // Estado válido para cierre
+  if (!['en_proceso', 'confirmada'].includes(cita.estado)) {
+    throw new AppError(
+      'Solo se puede cerrar una cita en proceso o confirmada.',
+      409, 'INVALID_STATE',
+    );
+  }
+
+  // Validar checklist completo
+  const { pendientes, total } = await checklistRepo.countPendingItems(idCita);
+  if (total > 0 && pendientes > 0) {
+    throw new AppError(
+      `El checklist no está completo. Faltan ${pendientes} de ${total} ítems.`,
+      409, 'CHECKLIST_INCOMPLETE',
+    );
+  }
+
+  // Cambiar estado a completada
+  const updated = await citaRepo.updateEstado(idCita, 'completada');
+
+  await auditService.log({
+    idUsuario, accion: 'CITA_CERRADA',
+    detalle: `Cita ${idCita} cerrada por groomer. Checklist: ${total - pendientes}/${total}`,
+    ipAddress,
+  });
+
+  // Notificar al cliente — incluye recomendaciones si existen en la ficha
+  const ficha = await fichaRepo.findByCita(idCita);
+  notifService.notificarCitaCompletada({
+    email:           cita.email_cliente,
+    nombreCliente:   cita.nombre_cliente,
+    nombreMascota:   cita.nombre_mascota,
+    nombreServicio:  cita.nombre_servicio,
+    recomendaciones: ficha?.recomendaciones ?? null,
+  }).catch(() => {});
+
+  return updated;
+}
+
+module.exports = { crearCita, getCita, getMisCitas, getCitasRango, cambiarEstado, actualizarCita, reprogramarCita, cancelarCitaPorCliente, getCalendario, getMiAgenda, cerrarServicio };
