@@ -1,7 +1,7 @@
 import http from '@/infrastructure/api/axios.instance'
 import { API_ENDPOINTS } from '@/core/config/api.config'
 import type {
-  CreateCitaPayload, UpdateCitaPayload, CambiarEstadoPayload,
+  CreateCitaPayload, UpdateCitaPayload, CambiarEstadoPayload, CancelarCitaPayload,
   CitaListResponse, CitaResponse, EstadoCita,
 } from '@/shared/types/agenda.types'
 
@@ -43,6 +43,11 @@ export const citaDatasource = {
 
   async reprogramar(id: string, payload: import('@/shared/types/agenda.types').ReprogramarPayload): Promise<CitaResponse> {
     const { data } = await http.patch<CitaResponse>(API_ENDPOINTS.CITAS.REPROGRAMAR(id), payload)
+    return data
+  },
+
+  async cancelar(id: string, payload: CancelarCitaPayload): Promise<CitaResponse> {
+    const { data } = await http.patch<CitaResponse>(API_ENDPOINTS.CITAS.CANCELAR(id), payload)
     return data
   },
 }

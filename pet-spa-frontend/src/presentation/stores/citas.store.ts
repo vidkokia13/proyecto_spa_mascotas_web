@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { citaDatasource } from '@/data/datasources/CitaDatasource'
 import { extractErrorMessage } from '@/core/errors/AppError'
-import type { Cita, CreateCitaPayload, UpdateCitaPayload, EstadoCita } from '@/shared/types/agenda.types'
+import type { Cita, CreateCitaPayload, UpdateCitaPayload, EstadoCita, CancelarCitaPayload } from '@/shared/types/agenda.types'
 
 export const useCitasStore = defineStore('citas', () => {
   const citas    = ref<Cita[]>([])
@@ -120,12 +120,28 @@ export const useCitasStore = defineStore('citas', () => {
     }
   }
 
+  async function cancelar(id: string, payload: CancelarCitaPayload): Promise<void> {
+    loading.value = true
+    error.value   = null
+    try {
+      const res = await citaDatasource.cancelar(id, payload)
+      const idx = citas.value.findIndex(c => c.id_cita === id)
+      if (idx !== -1) citas.value[idx] = res.cita
+      if (selected.value?.id_cita === id) selected.value = res.cita
+    } catch (e) {
+      error.value = extractErrorMessage(e)
+      throw e
+    } finally {
+      loading.value = false
+    }
+  }
+
   function clearError(): void { error.value = null }
   function clearSelected(): void { selected.value = null }
 
   return {
     citas, selected, loading, error,
-    fetchMisCitas, fetchRango, fetchOne, create, cambiarEstado, update, reprogramar,
+    fetchMisCitas, fetchRango, fetchOne, create, cambiarEstado, update, reprogramar, cancelar,
     clearError, clearSelected,
   }
 })

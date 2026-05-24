@@ -30,4 +30,13 @@ export const mascotaDatasource = {
   async remove(id: string): Promise<void> {
     await http.delete(API_ENDPOINTS.MASCOTAS.BY_ID(id))
   },
+
+  async subirCarnet(id: string, file: File): Promise<MascotaResponse> {
+    const fd = new FormData()
+    fd.append('carnet', file)
+    const { data } = await http.post<MascotaResponse>(API_ENDPOINTS.MASCOTAS.CARNET(id), fd, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    return data
+  },
 }

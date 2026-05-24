@@ -1,6 +1,6 @@
 import { useCitasStore } from '@/presentation/stores/citas.store'
 import { useUiStore } from '@/presentation/stores/ui.store'
-import type { CreateCitaPayload, UpdateCitaPayload, EstadoCita } from '@/shared/types/agenda.types'
+import type { CreateCitaPayload, UpdateCitaPayload, EstadoCita, CancelarCitaPayload } from '@/shared/types/agenda.types'
 
 export function useCitas() {
   const store   = useCitasStore()
@@ -63,5 +63,16 @@ export function useCitas() {
     }
   }
 
-  return { store, loadMisCitas, loadRango, createCita, cambiarEstado, updateCita, reprogramarCita }
+  async function cancelarCita(id: string, payload: CancelarCitaPayload): Promise<boolean> {
+    try {
+      await store.cancelar(id, payload)
+      uiStore.showToast('Cita cancelada correctamente', 'success')
+      return true
+    } catch {
+      uiStore.showToast(store.error ?? 'No se pudo cancelar la cita', 'error')
+      return false
+    }
+  }
+
+  return { store, loadMisCitas, loadRango, createCita, cambiarEstado, updateCita, reprogramarCita, cancelarCita }
 }
