@@ -11,19 +11,23 @@ async function findByCita(idCita, client = db) {
 }
 
 async function upsert({ idCita, estadoPelaje = null, condicionPiel = null, observaciones = null,
-  pesoActual = null, creadoPor = null }, client = db) {
+  pesoActual = null, estadoIngreso = null, recomendaciones = null, creadoPor = null }, client = db) {
   const { rows } = await client.query(
     `INSERT INTO fichas_tecnicas
-       (id_cita, estado_pelaje, condicion_piel, observaciones, peso_actual, creado_por)
-     VALUES ($1,$2,$3,$4,$5,$6)
+       (id_cita, estado_pelaje, condicion_piel, observaciones, peso_actual,
+        estado_ingreso, recomendaciones, creado_por)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
      ON CONFLICT (id_cita) DO UPDATE SET
-       estado_pelaje  = EXCLUDED.estado_pelaje,
-       condicion_piel = EXCLUDED.condicion_piel,
-       observaciones  = EXCLUDED.observaciones,
-       peso_actual    = EXCLUDED.peso_actual,
-       actualizado_en = NOW()
+       estado_pelaje   = EXCLUDED.estado_pelaje,
+       condicion_piel  = EXCLUDED.condicion_piel,
+       observaciones   = EXCLUDED.observaciones,
+       peso_actual     = EXCLUDED.peso_actual,
+       estado_ingreso  = EXCLUDED.estado_ingreso,
+       recomendaciones = EXCLUDED.recomendaciones,
+       actualizado_en  = NOW()
      RETURNING *`,
-    [idCita, estadoPelaje, condicionPiel, observaciones, pesoActual, creadoPor],
+    [idCita, estadoPelaje, condicionPiel, observaciones, pesoActual,
+      estadoIngreso, recomendaciones, creadoPor],
   );
   return rows[0];
 }

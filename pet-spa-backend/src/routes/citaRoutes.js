@@ -14,6 +14,9 @@ router.use(authRequired);
 // Cliente: see own appointments
 router.get('/mis-citas', asyncHandler(citaController.misCitas));
 
+// Groomer: personal agenda (filtered by own id_trabajador)
+router.get('/mi-agenda', requireRole('trabajador'), asyncHandler(citaController.miAgenda));
+
 // Calendario agrupado por groomer (dia o semana)
 router.get('/calendario', requireRole('admin','jefe','recepcion','trabajador'), asyncHandler(citaController.calendario));
 
@@ -29,6 +32,8 @@ router.patch('/:id/estado', validate(citaValidators.idParam, 'params'), validate
 // Cliente cancela su propia cita (con política de 24h)
 router.patch('/:id/cancelar',    validate(citaValidators.idParam, 'params'), validate(citaValidators.cancelar, 'body'), asyncHandler(citaController.cancelarPorCliente));
 router.patch('/:id/reprogramar', requireRole('admin','jefe','recepcion'), validate(citaValidators.idParam, 'params'), validate(citaValidators.reprogramar, 'body'), asyncHandler(citaController.reprogramar));
+// Groomer: cierre atómico del servicio (valida checklist, cambia a completada, notifica)
+router.post('/:id/cerrar',       requireRole('trabajador','admin','jefe'), validate(citaValidators.idParam, 'params'), asyncHandler(citaController.cerrarServicio));
 router.patch('/:id',             requireRole('admin','jefe','recepcion'), validate(citaValidators.idParam, 'params'), asyncHandler(citaController.actualizar));
 
 module.exports = router;

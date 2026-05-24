@@ -82,4 +82,16 @@ async function toggleItem(idCita, idItem, completado, client = db) {
   return rows[0] || null;
 }
 
-module.exports = { findItems, createItem, updateItem, initCitaChecklist, findCitaChecklist, toggleItem };
+async function countPendingItems(idCita, client = db) {
+  const { rows } = await client.query(
+    `SELECT
+       COUNT(*) FILTER (WHERE completado = false) AS pendientes,
+       COUNT(*)                                    AS total
+     FROM cita_checklist
+     WHERE id_cita = $1`,
+    [idCita],
+  );
+  return { pendientes: parseInt(rows[0].pendientes, 10), total: parseInt(rows[0].total, 10) };
+}
+
+module.exports = { findItems, createItem, updateItem, initCitaChecklist, findCitaChecklist, toggleItem, countPendingItems };
