@@ -36,6 +36,16 @@ const reprogramar = Joi.object({
     .messages({ 'date.min': 'La nueva fecha debe ser futura.' }),
 });
 
+const MOTIVOS_CANCELACION = ['salud','tiempo','emergencia','otro'];
+
+const cancelar = Joi.object({
+  motivo:    Joi.string().valid(...MOTIVOS_CANCELACION).required()
+    .messages({ 'any.only': `El motivo debe ser: ${MOTIVOS_CANCELACION.join(', ')}.` }),
+  detalle:   Joi.string().trim().max(300).allow('', null),
+  aceptaPolitica: Joi.boolean().valid(true).required()
+    .messages({ 'any.only': 'Debes aceptar la política de cancelación.' }),
+});
+
 const idParam = Joi.object({ id: Joi.string().uuid().required() });
 
-module.exports = { create, updateEstado, queryRango, getSlotsQuery, reprogramar, idParam };
+module.exports = { create, updateEstado, queryRango, getSlotsQuery, reprogramar, cancelar, idParam };

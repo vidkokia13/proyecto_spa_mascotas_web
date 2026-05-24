@@ -224,4 +224,46 @@ async function actualizarCita(idCita, fields, idUsuario, rol, ipAddress = null) 
   return updated;
 }
 
-module.exports = { crearCita, getCita, getMisCitas, getCitasRango, cambiarEstado, actualizarCita, reprogramarCita };
+async function cancelarCitaPorCliente(idCita, { motivo, detalle }, idUsuario, ipAddress = null) {
+  const cita = await citaRepo.findById(idCita);
+  if (!cita) throw new AppError('Cita no encontrada.', 404, 'CITA_NOT_FOUND');
+
+  if (cita.id_usuario_cliente !== idUsuario) {
+    throw new AppError('No puedes cancelar esta cita.', 403, 'FORBIDDEN');
+  }
+
+  if (!['pendiente', 'confirmada'].includes(cita.estado)) {
+    throw new AppError('Solo se pueden cancelar citas pendientes o confirmadas.', 409, 'INVALID_STATE');
+  }
+
+  const inicio = new Date(cita.fecha_hora_inicio);
+  const diffHoras = (inicio - Date.now()) / (1000 * 60 * 60);
+  if (diffHoras < 24) {
+    throw new AppError(
+      'Solo puedes cancelar con al menos 24 horas de anticipación.',
+      409, 'CANCEL_TOO_LATE',
+    );
+  }
+
+  const motivoCompleto = detalle ? `${motivo}: ${detalle}` : motivo;
+  const updated = await citaRepo.update(idCita, {
+    estado: 'cancelada',
+    motivo_cancelacion: motivoCompleto,
+  });
+
+  await auditService.log({
+    idUsuario, accion: 'CITA_CANCELADA_CLIENTE',
+    detalle: `Cita ${idCita} cancelada por cliente. Motivo: ${motivoCompleto}`,
+    ipAddress,
+  });
+
+  notifService.notificarCancelacion?.({
+    email: cita.email_cliente, nombreCliente: cita.nombre_cliente,
+    nombreMascota: cita.nombre_mascota, nombreServicio: cita.nombre_servicio,
+    motivo: motivoCompleto,
+  }).catch(() => {});
+
+  return updated;
+}
+
+module.exports = { crearCita, getCita, getMisCitas, getCitasRango, cambiarEstado, actualizarCita, reprogramarCita, cancelarCitaPorCliente };
