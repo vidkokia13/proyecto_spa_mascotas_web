@@ -148,6 +148,13 @@ const router = createRouter({
           meta: { requiresAuth: true, layout: 'dashboard' },
           beforeEnter: roleGuard([ROLES.ADMIN, ROLES.JEFE, ROLES.RECEPCION, ROLES.TRABAJADOR]),
         },
+        {
+          path: 'groomers',
+          name: ROUTE_NAMES.AGENDA_GROOMERS,
+          component: () => import('@/presentation/views/agenda/GroomersView.vue'),
+          meta: { requiresAuth: true, layout: 'dashboard' },
+          beforeEnter: roleGuard([ROLES.ADMIN, ROLES.JEFE]),
+        },
       ],
     },
 

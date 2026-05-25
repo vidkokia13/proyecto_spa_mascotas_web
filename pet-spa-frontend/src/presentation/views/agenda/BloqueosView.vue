@@ -24,11 +24,12 @@ const form = ref({
 })
 
 const TIPO_LABEL: Record<string, string> = {
-  cierre: 'Cierre del spa',
-  vacaciones: 'Vacaciones',
+  cierre:        'Cierre del spa',
+  feriado:       'Feriado',
   mantenimiento: 'Mantenimiento',
-  feriado: 'Feriado',
-  otro: 'Otro',
+  vacaciones:    'Vacaciones',
+  ausencia:      'Ausencia de groomer',
+  otro:          'Otro',
 }
 
 function formatFecha(iso: string): string {

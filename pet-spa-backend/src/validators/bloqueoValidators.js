@@ -3,7 +3,7 @@
 const Joi = require('joi');
 
 const create = Joi.object({
-  tipo:         Joi.string().valid('feriado','mantenimiento','ausencia','descanso','otro').default('otro'),
+  tipo:         Joi.string().valid('feriado','mantenimiento','cierre','vacaciones','ausencia','otro').default('otro'),
   fechaInicio:  Joi.date().iso().required(),
   fechaFin:     Joi.date().iso().greater(Joi.ref('fechaInicio')).required()
     .messages({ 'date.greater': 'La fecha de fin debe ser posterior al inicio.' }),

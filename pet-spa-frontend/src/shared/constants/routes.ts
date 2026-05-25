@@ -32,6 +32,7 @@ export const ROUTE_NAMES = {
   AGENDA_HORARIOS:    'agenda-horarios',
   AGENDA_BLOQUEOS:    'agenda-bloqueos',
   AGENDA_CALENDARIO:  'agenda-calendario',
+  AGENDA_GROOMERS:    'agenda-groomers',
 } as const
 
 export const ROUTE_PATHS = {
@@ -67,4 +68,5 @@ export const ROUTE_PATHS = {
   AGENDA_HORARIOS:    '/agenda/horarios',
   AGENDA_BLOQUEOS:    '/agenda/bloqueos',
   AGENDA_CALENDARIO:  '/agenda/calendario',
+  AGENDA_GROOMERS:    '/agenda/groomers',
 } as const
