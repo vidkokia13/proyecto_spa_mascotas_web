@@ -74,5 +74,20 @@ export function useCitas() {
     }
   }
 
-  return { store, loadMisCitas, loadRango, createCita, cambiarEstado, updateCita, reprogramarCita, cancelarCita }
+  async function loadMiAgenda(params?: { fechaInicio?: string; fechaFin?: string }): Promise<void> {
+    await store.fetchMiAgenda(params)
+  }
+
+  async function cerrarServicio(id: string): Promise<boolean> {
+    try {
+      await store.cerrar(id)
+      uiStore.showToast('Servicio cerrado correctamente. El cliente ha sido notificado.', 'success')
+      return true
+    } catch {
+      uiStore.showToast(store.error ?? 'No se pudo cerrar el servicio', 'error')
+      return false
+    }
+  }
+
+  return { store, loadMisCitas, loadRango, loadMiAgenda, createCita, cambiarEstado, updateCita, reprogramarCita, cancelarCita, cerrarServicio }
 }

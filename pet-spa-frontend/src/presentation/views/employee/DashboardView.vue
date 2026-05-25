@@ -11,7 +11,7 @@ import { ROLE_LABELS, ROLE_COLORS } from '@/shared/constants/roles'
 
 const authStore = useAuthStore()
 const router    = useRouter()
-const { store, loadRango, cambiarEstado } = useCitas()
+const { store, loadMiAgenda, cerrarServicio } = useCitas()
 
 const greeting = computed(() => {
   const h = new Date().getHours()
@@ -20,8 +20,7 @@ const greeting = computed(() => {
   return 'Buenas noches'
 })
 
-const today    = new Date().toISOString().slice(0, 10)
-const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10)
+const today = new Date().toISOString().slice(0, 10)
 
 const ESTADO_LABEL: Record<string, string> = {
   pendiente: 'Pendiente', confirmada: 'Confirmada', en_proceso: 'En proceso',
@@ -39,16 +38,14 @@ function formatHora(iso: string): string {
   return new Date(iso).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })
 }
 
-type EstadoNext = 'confirmada' | 'en_proceso' | 'completada' | 'cancelada'
-const WORKER_TRANSITIONS: Record<string, EstadoNext[]> = {
-  pendiente:  ['confirmada', 'en_proceso', 'cancelada'],
-  confirmada: ['en_proceso', 'cancelada'],
-  en_proceso: ['completada'],
+async function onCerrar(idCita: string) {
+  if (!confirm('¿Confirmas el cierre del servicio? Se verificará el checklist y se notificará al cliente.')) return
+  await cerrarServicio(idCita)
 }
 
 onMounted(() => {
-  const idTrabajador = authStore.user?.id_trabajador
-  loadRango({ fechaInicio: today, fechaFin: tomorrow, idTrabajador: idTrabajador ?? undefined })
+  const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10)
+  loadMiAgenda({ fechaInicio: today, fechaFin: tomorrow })
 })
 </script>
 
@@ -107,15 +104,11 @@ onMounted(() => {
               <p v-if="c.notas" class="text-xs text-gray-400 italic mt-1">{{ c.notas }}</p>
             </div>
             <div class="flex gap-2 flex-wrap">
-              <BaseButton
-                v-for="next in WORKER_TRANSITIONS[c.estado] ?? []"
-                :key="next"
-                size="sm"
-                :variant="next === 'cancelada' ? 'danger' : 'primary'"
+              <BaseButton v-if="c.estado === 'en_proceso'"
+                size="sm" variant="primary"
                 :disabled="store.loading"
-                @click="cambiarEstado(c.id_cita, next)"
-              >
-                {{ ESTADO_LABEL[next] }}
+                @click="onCerrar(c.id_cita)">
+                ✓ Cerrar servicio
               </BaseButton>
               <BaseButton size="sm" variant="secondary"
                 @click="router.push({ name: ROUTE_NAMES.CITA_DETALLE, params: { id: c.id_cita } })">

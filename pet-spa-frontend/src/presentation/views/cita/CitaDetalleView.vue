@@ -24,7 +24,7 @@ const agendaStore = useAgendaStore()
 const insumosStore = useInsumosStore()
 const uiStore  = useUiStore()
 const { store: detalleStore, loadAll, savePago, deletePago, saveFicha, toggleItem, uploadFoto, deleteFoto, saveInsumos } = useDetalle()
-const { reprogramarCita, cambiarEstado } = useCitas()
+const { reprogramarCita, cambiarEstado, cerrarServicio } = useCitas()
 
 const idCita = computed(() => route.params.id as string)
 const rol    = computed(() => authStore.userRole ?? '')
@@ -40,12 +40,17 @@ const canEditInsumos      = computed(() => ['trabajador','admin','jefe'].include
 const canReprogramar      = computed(() => ['admin','jefe','recepcion'].includes(rol.value))
 
 // ── Estado transitions ────────────────────────────────────────────────────────
+// trabajador uses cerrarServicio for en_proceso→completada (atomic close with checklist)
 const TRANSITIONS: Record<string, Record<string, EstadoCita[]>> = {
-  trabajador: { pendiente: ['confirmada','en_proceso','cancelada'], confirmada: ['en_proceso','cancelada'], en_proceso: ['completada'] },
+  trabajador: { pendiente: ['confirmada','en_proceso','cancelada'], confirmada: ['en_proceso','cancelada'] },
   recepcion:  { pendiente: ['confirmada','cancelada'], confirmada: ['cancelada'] },
   admin:      { pendiente: ['confirmada','cancelada'], confirmada: ['en_proceso','cancelada'], en_proceso: ['completada'] },
   jefe:       { pendiente: ['confirmada','cancelada'], confirmada: ['en_proceso','cancelada'], en_proceso: ['completada'] },
 }
+
+const canCerrarServicio = computed(() =>
+  ['trabajador','admin','jefe'].includes(rol.value) && cita.value?.estado === 'en_proceso',
+)
 const allowedTransitions = computed(() =>
   cita.value ? (TRANSITIONS[rol.value]?.[cita.value.estado] ?? []) : [],
 )
@@ -69,6 +74,12 @@ function formatDate(iso: string) {
 
 async function onCambiarEstado(estado: EstadoCita) {
   const ok = await cambiarEstado(idCita.value, estado)
+  if (ok) await citasStore.fetchOne(idCita.value)
+}
+
+async function onCerrarServicio() {
+  if (!confirm('¿Confirmas el cierre del servicio? Se verificará el checklist y se notificará al cliente.')) return
+  const ok = await cerrarServicio(idCita.value)
   if (ok) await citasStore.fetchOne(idCita.value)
 }
 
@@ -107,25 +118,32 @@ async function submitReprogramar() {
 }
 
 // ── Ficha técnica ─────────────────────────────────────────────────────────────
-const fichaForm = ref({ estadoPelaje: '', condicionPiel: '', observaciones: '', pesoActual: '' })
+const fichaForm = ref({
+  estadoPelaje: '', condicionPiel: '', observaciones: '',
+  pesoActual: '', estadoIngreso: '', recomendaciones: '',
+})
 const fichaEditMode = ref(false)
 
 function initFichaForm() {
   const f = detalleStore.ficha
   fichaForm.value = {
-    estadoPelaje:  f?.estado_pelaje  ?? '',
-    condicionPiel: f?.condicion_piel ?? '',
-    observaciones: f?.observaciones  ?? '',
-    pesoActual:    f?.peso_actual != null ? String(f.peso_actual) : '',
+    estadoPelaje:   f?.estado_pelaje  ?? '',
+    condicionPiel:  f?.condicion_piel ?? '',
+    observaciones:  f?.observaciones  ?? '',
+    pesoActual:     f?.peso_actual != null ? String(f.peso_actual) : '',
+    estadoIngreso:  f?.estado_ingreso  ?? '',
+    recomendaciones: f?.recomendaciones ?? '',
   }
 }
 async function submitFicha() {
   const ok = await saveFicha({
-    idCita:        idCita.value,
-    estadoPelaje:  fichaForm.value.estadoPelaje  || null,
-    condicionPiel: fichaForm.value.condicionPiel || null,
-    observaciones: fichaForm.value.observaciones || null,
-    pesoActual:    fichaForm.value.pesoActual ? parseFloat(fichaForm.value.pesoActual) : null,
+    idCita:          idCita.value,
+    estadoPelaje:    fichaForm.value.estadoPelaje    || null,
+    condicionPiel:   fichaForm.value.condicionPiel   || null,
+    observaciones:   fichaForm.value.observaciones   || null,
+    pesoActual:      fichaForm.value.pesoActual ? parseFloat(fichaForm.value.pesoActual) : null,
+    estadoIngreso:   fichaForm.value.estadoIngreso   || null,
+    recomendaciones: fichaForm.value.recomendaciones || null,
   })
   if (ok) fichaEditMode.value = false
 }
@@ -279,7 +297,8 @@ const totalPagado = computed(() => detalleStore.pagos.reduce((s, p) => s + Numbe
         </div>
 
         <!-- State actions -->
-        <div v-if="allowedTransitions.length > 0" class="flex gap-2 flex-wrap mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+        <div v-if="allowedTransitions.length > 0 || canCerrarServicio || (canReprogramar && ['pendiente','confirmada'].includes(cita.estado))"
+          class="flex gap-2 flex-wrap mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
           <BaseButton
             v-for="next in allowedTransitions" :key="next"
             size="sm"
@@ -288,6 +307,12 @@ const totalPagado = computed(() => detalleStore.pagos.reduce((s, p) => s + Numbe
             @click="onCambiarEstado(next)"
           >
             → {{ ESTADO_LABEL[next] }}
+          </BaseButton>
+          <BaseButton v-if="canCerrarServicio"
+            size="sm" variant="primary"
+            :disabled="citasStore.loading"
+            @click="onCerrarServicio">
+            ✓ Cerrar servicio
           </BaseButton>
           <BaseButton v-if="canReprogramar && ['pendiente','confirmada'].includes(cita.estado)"
             size="sm" variant="secondary"
@@ -329,6 +354,16 @@ const totalPagado = computed(() => detalleStore.pagos.reduce((s, p) => s + Numbe
               <dt class="text-gray-500">Observaciones</dt>
               <dd class="font-medium text-gray-900 dark:text-white">{{ detalleStore.ficha.observaciones ?? '—' }}</dd>
             </div>
+            <div class="col-span-2">
+              <dt class="text-gray-500">Estado al ingreso</dt>
+              <dd class="font-medium text-gray-900 dark:text-white">{{ detalleStore.ficha.estado_ingreso ?? '—' }}</dd>
+            </div>
+            <div v-if="detalleStore.ficha.recomendaciones" class="col-span-2">
+              <dt class="text-gray-500 mb-1">Recomendaciones del groomer</dt>
+              <dd class="font-medium text-gray-900 dark:text-white bg-purple-50 dark:bg-purple-900/20 border-l-4 border-purple-400 px-3 py-2 rounded text-sm">
+                {{ detalleStore.ficha.recomendaciones }}
+              </dd>
+            </div>
           </dl>
         </div>
 
@@ -356,8 +391,19 @@ const totalPagado = computed(() => detalleStore.pagos.reduce((s, p) => s + Numbe
           </div>
           <div>
             <label class="block text-xs text-gray-500 mb-1">Observaciones</label>
-            <textarea v-model="fichaForm.observaciones" rows="3" placeholder="Observaciones generales…"
+            <textarea v-model="fichaForm.observaciones" rows="2" placeholder="Observaciones generales…"
               class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none resize-none" />
+          </div>
+          <div>
+            <label class="block text-xs text-gray-500 mb-1">Estado al ingreso</label>
+            <textarea v-model="fichaForm.estadoIngreso" rows="2" placeholder="Descripción del estado de la mascota al ingresar…"
+              class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none resize-none" />
+          </div>
+          <div>
+            <label class="block text-xs text-gray-500 mb-1">Recomendaciones para el cliente</label>
+            <textarea v-model="fichaForm.recomendaciones" rows="3" placeholder="Cuidados post-servicio, próxima visita recomendada…"
+              class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none resize-none" />
+            <p class="text-xs text-gray-400 mt-1">Se incluirán en el email de notificación al cerrar el servicio.</p>
           </div>
           <div class="flex gap-2">
             <BaseButton size="sm" :disabled="detalleStore.loading" @click="submitFicha">Guardar ficha</BaseButton>

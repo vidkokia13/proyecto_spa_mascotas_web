@@ -46,11 +46,13 @@ export const API_ENDPOINTS = {
   CITAS: {
     BASE:        '/citas',
     MIS_CITAS:   '/citas/mis-citas',
+    MI_AGENDA:   '/citas/mi-agenda',
     CALENDARIO:  '/citas/calendario',
     BY_ID:       (id: string) => `/citas/${id}`,
     ESTADO:      (id: string) => `/citas/${id}/estado`,
     REPROGRAMAR: (id: string) => `/citas/${id}/reprogramar`,
     CANCELAR:    (id: string) => `/citas/${id}/cancelar`,
+    CERRAR:      (id: string) => `/citas/${id}/cerrar`,
   },
   PAGOS: {
     BASE:    '/pagos',
