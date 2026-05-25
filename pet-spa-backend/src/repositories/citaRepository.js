@@ -39,7 +39,7 @@ async function create({ idCliente, idMascota, idServicio, idTrabajador = null,
     `INSERT INTO citas
        (id_cliente, id_mascota, id_servicio, id_trabajador,
         fecha_cita, fecha_hora_inicio, fecha_hora_fin, duracion_ajustada, notas, creado_por)
-     VALUES ($1,$2,$3,$4,$5,$5,$6,$7,$8,$9)
+     VALUES ($1,$2,$3,$4,$5::date,$5,$6,$7,$8,$9)
      RETURNING *`,
     [idCliente, idMascota, idServicio, idTrabajador,
       fechaHoraInicio, fechaHoraFin, duracionAjustada, notas, creadoPor],

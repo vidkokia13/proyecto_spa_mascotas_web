@@ -24,7 +24,7 @@ async function listByCita(req, res) {
 }
 
 async function registrar(req, res) {
-  const { id: idUsuario, rol } = req.user;
+  const { id_usuario: idUsuario, rol } = req.user;
   const { idCita, insumos } = req.body;
   const result = await insumoService.registrarInsumos({ idCita, idUsuario, rol, insumos });
   res.status(201).json({ registros: result });

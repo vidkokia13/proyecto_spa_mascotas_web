@@ -24,7 +24,7 @@ async function getCitaChecklist(req, res) {
 }
 
 async function toggleItem(req, res) {
-  const { id: idUsuario, rol } = req.user;
+  const { id_usuario: idUsuario, rol } = req.user;
   const { idCita, idItem } = req.params;
   const { completado } = req.body;
   const row = await checklistService.toggleItem(idCita, idItem, completado, idUsuario, rol);

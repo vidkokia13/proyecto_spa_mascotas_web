@@ -20,17 +20,17 @@ async function verificar(req, res) {
 }
 
 async function crear(req, res) {
-  const promo = await promocionService.createPromocion(req.body, req.user.id, req.ip);
+  const promo = await promocionService.createPromocion(req.body, req.user.id_usuario, req.ip);
   res.status(201).json({ promocion: promo });
 }
 
 async function actualizar(req, res) {
-  const promo = await promocionService.updatePromocion(req.params.id, req.body, req.user.id, req.ip);
+  const promo = await promocionService.updatePromocion(req.params.id, req.body, req.user.id_usuario, req.ip);
   res.json({ promocion: promo });
 }
 
 async function eliminar(req, res) {
-  await promocionService.removePromocion(req.params.id, req.user.id, req.ip);
+  await promocionService.removePromocion(req.params.id, req.user.id_usuario, req.ip);
   res.json({ message: 'Promoción desactivada.' });
 }
 

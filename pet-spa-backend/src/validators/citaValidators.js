@@ -8,8 +8,7 @@ const create = Joi.object({
   idMascota:       Joi.string().uuid().required(),
   idServicio:      Joi.string().uuid().required(),
   idTrabajador:    Joi.string().uuid().allow(null),
-  fechaHoraInicio: Joi.date().iso().min('now').required()
-    .messages({ 'date.min': 'La fecha de la cita debe ser futura.' }),
+  fechaHoraInicio: Joi.date().iso().required(),
   notas:           Joi.string().trim().max(500).allow('', null),
 });
 
@@ -25,7 +24,7 @@ const queryRango = Joi.object({
 });
 
 const getSlotsQuery = Joi.object({
-  fecha:        Joi.date().iso().min('now').required(),
+  fecha:        Joi.date().iso().required(),
   idServicio:   Joi.string().uuid().required(),
   idMascota:    Joi.string().uuid().required(),
   idTrabajador: Joi.string().uuid().allow(null, ''),

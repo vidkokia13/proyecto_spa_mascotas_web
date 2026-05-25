@@ -19,7 +19,7 @@ async function getSlots(req, res) {
   if (!servicio || !servicio.activo) throw new AppError('Servicio no encontrado.', 404, 'SERVICIO_NOT_FOUND');
 
   // Clients can only query their own pets
-  if (req.user.rol === 'cliente' && mascota.id_usuario !== req.user.id) {
+  if (req.user.rol === 'cliente' && mascota.id_usuario !== req.user.id_usuario) {
     throw new AppError('No tienes acceso a esta mascota.', 403, 'FORBIDDEN');
   }
 
@@ -29,14 +29,16 @@ async function getSlots(req, res) {
 
 async function getBloqueos(req, res) {
   const { fechaInicio, fechaFin } = req.query;
-  const bloqueos = await bloqueoRepo.findInRange(new Date(fechaInicio), new Date(fechaFin), null);
+  const bloqueos = (fechaInicio && fechaFin)
+    ? await bloqueoRepo.findInRange(new Date(fechaInicio), new Date(fechaFin), null)
+    : await bloqueoRepo.findAll();
   res.json({ bloqueos });
 }
 
 async function crearBloqueo(req, res) {
   const { tipo, fechaInicio, fechaFin, motivo, idTrabajador } = req.body;
-  const bloqueo = await bloqueoRepo.create({ tipo, fechaInicio, fechaFin, motivo, idTrabajador, creadoPor: req.user.id });
-  await auditService.log({ idUsuario: req.user.id, accion: 'BLOQUEO_CREADO', detalle: `Bloqueo ${bloqueo.id_bloqueo} tipo ${tipo}`, ipAddress: req.ip });
+  const bloqueo = await bloqueoRepo.create({ tipo, fechaInicio, fechaFin, motivo, idTrabajador, creadoPor: req.user.id_usuario });
+  await auditService.log({ idUsuario: req.user.id_usuario, accion: 'BLOQUEO_CREADO', detalle: `Bloqueo ${bloqueo.id_bloqueo} tipo ${tipo}`, ipAddress: req.ip });
   res.status(201).json({ bloqueo });
 }
 
@@ -44,7 +46,7 @@ async function eliminarBloqueo(req, res) {
   const bloqueo = await bloqueoRepo.findById(req.params.id);
   if (!bloqueo) throw new AppError('Bloqueo no encontrado.', 404, 'BLOQUEO_NOT_FOUND');
   await bloqueoRepo.remove(req.params.id);
-  await auditService.log({ idUsuario: req.user.id, accion: 'BLOQUEO_ELIMINADO', detalle: `Bloqueo ${req.params.id}`, ipAddress: req.ip });
+  await auditService.log({ idUsuario: req.user.id_usuario, accion: 'BLOQUEO_ELIMINADO', detalle: `Bloqueo ${req.params.id}`, ipAddress: req.ip });
   res.json({ message: 'Bloqueo eliminado.' });
 }
 

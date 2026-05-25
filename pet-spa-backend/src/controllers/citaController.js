@@ -3,7 +3,7 @@
 const citaService = require('../services/citaService');
 
 async function crear(req, res) {
-  const { id: idUsuario, rol } = req.user;
+  const { id_usuario: idUsuario, rol } = req.user;
   // Staff can book on behalf of a client
   const idUsuarioCliente = (['admin','jefe','recepcion'].includes(rol) && req.body.idUsuarioCliente)
     ? req.body.idUsuarioCliente
@@ -23,14 +23,14 @@ async function crear(req, res) {
 }
 
 async function getOne(req, res) {
-  const cita = await citaService.getCita(req.params.id, req.user.id, req.user.rol);
+  const cita = await citaService.getCita(req.params.id, req.user.id_usuario, req.user.rol);
   res.json({ cita });
 }
 
 async function misCitas(req, res) {
   const limit  = Math.min(parseInt(req.query.limit  || '20'), 100);
   const offset = parseInt(req.query.offset || '0');
-  const citas  = await citaService.getMisCitas(req.user.id, { limit, offset });
+  const citas  = await citaService.getMisCitas(req.user.id_usuario, { limit, offset });
   res.json({ citas, limit, offset });
 }
 
@@ -47,28 +47,28 @@ async function listRango(req, res) {
 
 async function cambiarEstado(req, res) {
   const updated = await citaService.cambiarEstado(
-    req.params.id, req.body.estado, req.user.id, req.user.rol, req.ip,
+    req.params.id, req.body.estado, req.user.id_usuario, req.user.rol, req.ip,
   );
   res.json({ cita: updated });
 }
 
 async function actualizar(req, res) {
   const updated = await citaService.actualizarCita(
-    req.params.id, req.body, req.user.id, req.user.rol, req.ip,
+    req.params.id, req.body, req.user.id_usuario, req.user.rol, req.ip,
   );
   res.json({ cita: updated });
 }
 
 async function reprogramar(req, res) {
   const updated = await citaService.reprogramarCita(
-    req.params.id, req.body, req.user.id, req.user.rol, req.ip,
+    req.params.id, req.body, req.user.id_usuario, req.user.rol, req.ip,
   );
   res.json({ cita: updated });
 }
 
 async function cancelarPorCliente(req, res) {
   const updated = await citaService.cancelarCitaPorCliente(
-    req.params.id, req.body, req.user.id, req.ip,
+    req.params.id, req.body, req.user.id_usuario, req.ip,
   );
   res.json({ cita: updated });
 }
@@ -84,13 +84,13 @@ async function calendario(req, res) {
 
 async function miAgenda(req, res) {
   const { fechaInicio, fechaFin } = req.query;
-  const citas = await citaService.getMiAgenda(req.user.id, { fechaInicio, fechaFin });
+  const citas = await citaService.getMiAgenda(req.user.id_usuario, { fechaInicio, fechaFin });
   res.json({ citas });
 }
 
 async function cerrarServicio(req, res) {
   const updated = await citaService.cerrarServicio(
-    req.params.id, req.user.id, req.user.rol, req.ip,
+    req.params.id, req.user.id_usuario, req.user.rol, req.ip,
   );
   res.json({ cita: updated });
 }

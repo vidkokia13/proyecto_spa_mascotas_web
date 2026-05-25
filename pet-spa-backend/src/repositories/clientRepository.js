@@ -33,7 +33,7 @@ async function create(data, client = db) {
     data.telefono || null,
     data.direccion || null,
     data.ci || null,
-    data.canalNotificacion || null,
+    data.canalNotificacion || 'email',
     data.horariosPreferidos || null,
   ];
   const { rows } = await client.query(sql, params);

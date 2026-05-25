@@ -5,8 +5,11 @@ const clientRepo  = require('../repositories/clientRepository');
 const AppError    = require('../utils/AppError');
 
 async function _requireClienteId(idUsuario) {
-  const cliente = await clientRepo.findByUserId(idUsuario);
-  if (!cliente) throw new AppError('Perfil de cliente no encontrado.', 404, 'CLIENT_NOT_FOUND');
+  let cliente = await clientRepo.findByUserId(idUsuario);
+  if (!cliente) {
+    // Puede faltar si el usuario fue activado manualmente sin pasar por el flujo de registro
+    cliente = await clientRepo.create({ idUsuario });
+  }
   return cliente.id_cliente;
 }
 

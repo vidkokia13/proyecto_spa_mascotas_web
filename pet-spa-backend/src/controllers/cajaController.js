@@ -13,7 +13,7 @@ async function cerrar(req, res) {
   const cierre = await cajaService.cerrarCaja(
     fecha || new Date().toISOString().slice(0, 10),
     notas || null,
-    req.user.id,
+    req.user.id_usuario,
     req.ip,
   );
   res.status(201).json({ cierre });

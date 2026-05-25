@@ -27,7 +27,10 @@ function timeToMinutes(hhmm) {
 }
 
 async function getSlotsDisponibles({ fecha, servicio, mascota, idTrabajador = null }) {
-  const fechaDate = new Date(fecha);
+  // Joi convierte el query param a Date object; normalizar a string YYYY-MM-DD
+  const fechaStr  = fecha instanceof Date ? fecha.toISOString().slice(0, 10) : String(fecha);
+  fecha = fechaStr;
+  const fechaDate = new Date(fechaStr + 'T00:00:00');
   const diaSemana = fechaDate.getDay(); // 0=Sun
 
   const horario = await horarioRepo.findByDia(diaSemana);

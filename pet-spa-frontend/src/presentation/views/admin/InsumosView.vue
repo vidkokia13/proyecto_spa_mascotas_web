@@ -100,7 +100,7 @@ onMounted(() => store.fetchAll())
       </BaseCard>
     </div>
 
-    <BaseModal :show="showModal" :title="isEdit ? 'Editar insumo' : 'Nuevo insumo'" @close="showModal = false">
+    <BaseModal :open="showModal" :title="isEdit ? 'Editar insumo' : 'Nuevo insumo'" @close="showModal = false">
       <div class="space-y-4">
         <div>
           <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Nombre *</label>

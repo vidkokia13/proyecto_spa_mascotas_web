@@ -27,6 +27,8 @@ function errorHandler(err, req, res, _next) {
     } else if (err.code === '23503') { // foreign_key_violation
       err = new AppError('Referencia inválida (foreign key)', 400, 'FK_VIOLATION');
     } else if (err.code === '23502') { // not_null_violation
+      const col = err.column ? ` (columna: ${err.table}.${err.column})` : '';
+      logger.warn(`NOT_NULL violation${col}`, { table: err.table, column: err.column });
       err = new AppError('Falta un campo obligatorio', 400, 'NOT_NULL');
     } else if (err.code === '22P02') { // invalid_text_representation (e.g. UUID malformado)
       err = new AppError('Formato de dato inválido', 400, 'INVALID_INPUT');

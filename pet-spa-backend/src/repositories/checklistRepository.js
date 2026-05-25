@@ -7,7 +7,7 @@ const db = require('../config/db');
 async function findItems({ idServicio = null, soloActivos = true } = {}, client = db) {
   const conditions = soloActivos ? ['ci.activo = true'] : [];
   const params = [];
-  if (idServicio !== undefined) {
+  if (idServicio) {
     params.push(idServicio);
     conditions.push(`(ci.id_servicio = $${params.length} OR ci.id_servicio IS NULL)`);
   }

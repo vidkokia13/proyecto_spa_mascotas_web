@@ -11,7 +11,7 @@ async function upload(req, res) {
   if (!req.file) {
     return res.status(400).json({ error: 'No se recibió ningún archivo.' });
   }
-  const { id: idUsuario, rol } = req.user;
+  const { id_usuario: idUsuario, rol } = req.user;
   const tipo = req.body.tipo ?? 'antes';
   const foto = await fotoService.uploadFoto({
     idCita: req.params.idCita,
@@ -24,7 +24,7 @@ async function upload(req, res) {
 }
 
 async function remove(req, res) {
-  const { id: idUsuario, rol } = req.user;
+  const { id_usuario: idUsuario, rol } = req.user;
   await fotoService.deleteFoto(req.params.id, idUsuario, rol);
   res.json({ message: 'Foto eliminada.' });
 }

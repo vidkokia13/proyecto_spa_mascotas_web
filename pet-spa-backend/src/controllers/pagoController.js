@@ -8,7 +8,7 @@ async function registrar(req, res) {
     idCita, monto, metodo, referencia,
     idPromocion: idPromocion || null,
     codigoPromocion: codigoPromocion || null,
-    registradoPor: req.user.id, ipAddress: req.ip,
+    registradoPor: req.user.id_usuario, ipAddress: req.ip,
   });
   res.status(201).json({ pago });
 }
@@ -24,7 +24,7 @@ async function recibo(req, res) {
 }
 
 async function eliminar(req, res) {
-  await pagoService.eliminarPago(req.params.id, req.user.id, req.ip);
+  await pagoService.eliminarPago(req.params.id, req.user.id_usuario, req.ip);
   res.json({ message: 'Pago eliminado.' });
 }
 

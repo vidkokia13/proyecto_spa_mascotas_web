@@ -39,8 +39,18 @@ async function findInRange(fechaInicio, fechaFin, idTrabajador = null, client = 
   return rows;
 }
 
+async function findAll(client = db) {
+  const { rows } = await client.query(
+    `SELECT b.*, u.nombre AS creado_por_nombre
+     FROM bloqueos b
+     LEFT JOIN usuarios u ON b.creado_por = u.id_usuario
+     ORDER BY fecha_inicio DESC`,
+  );
+  return rows;
+}
+
 async function remove(idBloqueo, client = db) {
   await client.query('DELETE FROM bloqueos WHERE id_bloqueo = $1', [idBloqueo]);
 }
 
-module.exports = { create, findById, findInRange, remove };
+module.exports = { create, findById, findInRange, findAll, remove };
