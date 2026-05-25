@@ -5,10 +5,11 @@ import { useServicios } from '@/presentation/composables/useServicios'
 import { useMascotas } from '@/presentation/composables/useMascotas'
 import { useAgenda } from '@/presentation/composables/useAgenda'
 import { useCitas } from '@/presentation/composables/useCitas'
+import { agendaDatasource } from '@/data/datasources/AgendaDatasource'
 import BaseButton from '@/presentation/components/ui/BaseButton.vue'
 import BaseCard from '@/presentation/components/ui/BaseCard.vue'
 import { ROUTE_NAMES } from '@/shared/constants/routes'
-import type { Servicio, Mascota, Slot } from '@/shared/types/agenda.types'
+import type { Servicio, Mascota, Slot, Groomer } from '@/shared/types/agenda.types'
 
 const router = useRouter()
 
@@ -21,8 +22,10 @@ const { createCita, store: citasStore }                   = useCitas()
 const step = ref<1 | 2 | 3>(1)
 
 // Step 1 — service & pet
-const selectedServicio = ref<Servicio | null>(null)
-const selectedMascota  = ref<Mascota | null>(null)
+const selectedServicio  = ref<Servicio | null>(null)
+const selectedMascota   = ref<Mascota | null>(null)
+const groomers          = ref<Groomer[]>([])
+const selectedGroomerId = ref<string | null>(null)
 
 // Step 2 — date & slot
 const selectedFecha = ref<string>('')
@@ -78,8 +81,9 @@ watch(selectedFecha, async (fecha) => {
   agendaStore.clearSlots()
   await loadSlots({
     fecha,
-    idServicio: selectedServicio.value.id_servicio,
-    idMascota:  selectedMascota.value.id_mascota,
+    idServicio:   selectedServicio.value.id_servicio,
+    idMascota:    selectedMascota.value.id_mascota,
+    idTrabajador: selectedGroomerId.value ?? undefined,
   })
 })
 
@@ -107,6 +111,7 @@ async function confirmar() {
   const ok = await createCita({
     idMascota:       selectedMascota.value.id_mascota,
     idServicio:      selectedServicio.value.id_servicio,
+    idTrabajador:    selectedGroomerId.value || null,
     fechaHoraInicio,
     notas: notas.value || null,
   })
@@ -115,7 +120,12 @@ async function confirmar() {
 }
 
 onMounted(async () => {
-  await Promise.all([loadServicios(), loadMascotas()])
+  const [, , res] = await Promise.all([
+    loadServicios(),
+    loadMascotas(),
+    agendaDatasource.getGroomers().catch(() => ({ groomers: [] })),
+  ])
+  groomers.value = res.groomers
 })
 </script>
 
@@ -199,6 +209,20 @@ onMounted(async () => {
         </div>
       </div>
 
+      <div v-if="groomers.length > 0">
+        <h2 class="text-base font-semibold text-gray-900 dark:text-white mb-1">¿Tienes groomer preferido? <span class="text-sm font-normal text-gray-400">(opcional)</span></h2>
+        <p class="text-xs text-gray-400 mb-3">Si no eliges uno, cualquier groomer disponible tomará la cita.</p>
+        <select
+          v-model="selectedGroomerId"
+          class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none"
+        >
+          <option :value="null">Sin preferencia (cualquier groomer)</option>
+          <option v-for="g in groomers" :key="g.id_trabajador" :value="g.id_trabajador">
+            {{ `${g.nombre}${g.especialidad ? ' · ' + g.especialidad : ''}` }}
+          </option>
+        </select>
+      </div>
+
       <div class="flex justify-end">
         <BaseButton :disabled="!canGoStep2" @click="goStep2">Continuar →</BaseButton>
       </div>
@@ -273,6 +297,12 @@ onMounted(async () => {
           <div v-if="agendaStore.slotsInfo" class="flex justify-between text-sm">
             <dt class="text-gray-500">Duración estimada</dt>
             <dd class="font-medium text-gray-900 dark:text-white">{{ agendaStore.slotsInfo.duracion_ajustada }} min</dd>
+          </div>
+          <div class="flex justify-between text-sm">
+            <dt class="text-gray-500">Groomer</dt>
+            <dd class="font-medium text-gray-900 dark:text-white">
+              {{ selectedGroomerId ? (groomers.find(g => g.id_trabajador === selectedGroomerId)?.nombre ?? '—') : 'Sin preferencia' }}
+            </dd>
           </div>
           <div class="flex justify-between text-sm">
             <dt class="text-gray-500">Precio base</dt>

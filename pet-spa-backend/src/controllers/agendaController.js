@@ -5,6 +5,7 @@ const mascotaRepo    = require('../repositories/mascotaRepository');
 const servicioRepo   = require('../repositories/servicioRepository');
 const bloqueoRepo    = require('../repositories/bloqueoRepository');
 const citaRepo       = require('../repositories/citaRepository');
+const workerRepo     = require('../repositories/workerRepository');
 const auditService   = require('../services/auditService');
 const AppError       = require('../utils/AppError');
 
@@ -50,4 +51,9 @@ async function eliminarBloqueo(req, res) {
   res.json({ message: 'Bloqueo eliminado.' });
 }
 
-module.exports = { getSlots, getBloqueos, crearBloqueo, eliminarBloqueo };
+async function getGroomers(req, res) {
+  const groomers = await workerRepo.findActiveGroomers();
+  res.json({ groomers });
+}
+
+module.exports = { getSlots, getBloqueos, crearBloqueo, eliminarBloqueo, getGroomers };

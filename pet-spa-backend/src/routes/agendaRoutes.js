@@ -15,6 +15,9 @@ router.use(authRequired);
 // Available slots query (all authenticated users)
 router.get('/slots', validate(citaValidators.getSlotsQuery, 'query'), asyncHandler(agendaController.getSlots));
 
+// Active groomers list (all authenticated users — used by booking flow)
+router.get('/groomers', asyncHandler(agendaController.getGroomers));
+
 // Blockouts
 router.get('/bloqueos',     requireRole('admin','jefe','recepcion'), asyncHandler(agendaController.getBloqueos));
 router.post('/bloqueos',    requireRole('admin','jefe'), validate(bloqueoValidators.create, 'body'), asyncHandler(agendaController.crearBloqueo));

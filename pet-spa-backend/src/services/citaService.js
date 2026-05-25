@@ -131,9 +131,11 @@ async function cambiarEstado(idCita, estado, idUsuario, rol, ipAddress = null) {
   const cita = await citaRepo.findById(idCita);
   if (!cita) throw new AppError('Cita no encontrada.', 404, 'CITA_NOT_FOUND');
 
+  // Phase order: pendiente → confirmada → en_proceso → completada (via cerrarServicio)
+  // completada is only reachable from en_proceso; no role can skip phases
   const TRANSITIONS = {
     cliente:    { pendiente: ['cancelada'] },
-    trabajador: { pendiente: ['confirmada','en_proceso','cancelada'], confirmada: ['en_proceso','cancelada'], en_proceso: ['completada'] },
+    trabajador: { pendiente: ['confirmada','cancelada'], confirmada: ['en_proceso','cancelada'] },
     recepcion:  { pendiente: ['confirmada','cancelada'], confirmada: ['cancelada'] },
     jefe:       { pendiente: ['confirmada','cancelada'], confirmada: ['en_proceso','cancelada'], en_proceso: ['completada'], completada: [], cancelada: [] },
     admin:      { pendiente: ['confirmada','cancelada'], confirmada: ['en_proceso','cancelada'], en_proceso: ['completada'], completada: [], cancelada: [] },

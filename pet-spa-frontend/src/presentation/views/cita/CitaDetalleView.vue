@@ -9,6 +9,7 @@ import { useDetalle }    from '@/presentation/composables/useDetalle'
 import { useCitas }      from '@/presentation/composables/useCitas'
 import { useUiStore }    from '@/presentation/stores/ui.store'
 import { agendaDatasource } from '@/data/datasources/AgendaDatasource'
+import type { Groomer } from '@/shared/types/agenda.types'
 import { ROUTE_NAMES }   from '@/shared/constants/routes'
 import BaseCard    from '@/presentation/components/ui/BaseCard.vue'
 import BaseButton  from '@/presentation/components/ui/BaseButton.vue'
@@ -24,7 +25,7 @@ const agendaStore = useAgendaStore()
 const insumosStore = useInsumosStore()
 const uiStore  = useUiStore()
 const { store: detalleStore, loadAll, savePago, deletePago, saveFicha, toggleItem, uploadFoto, deleteFoto, saveInsumos } = useDetalle()
-const { reprogramarCita, cambiarEstado, cerrarServicio } = useCitas()
+const { reprogramarCita, cambiarEstado, cerrarServicio, updateCita } = useCitas()
 
 const idCita = computed(() => route.params.id as string)
 const rol    = computed(() => authStore.userRole ?? '')
@@ -40,12 +41,13 @@ const canEditInsumos      = computed(() => ['trabajador','admin','jefe'].include
 const canReprogramar      = computed(() => ['admin','jefe','recepcion'].includes(rol.value))
 
 // ── Estado transitions ────────────────────────────────────────────────────────
-// trabajador uses cerrarServicio for en_proceso→completada (atomic close with checklist)
+// Phase order: pendiente → confirmada → en_proceso → completada (via cerrarServicio)
+// completada never appears as a button — always via cerrarServicio atomic close
 const TRANSITIONS: Record<string, Record<string, EstadoCita[]>> = {
-  trabajador: { pendiente: ['confirmada','en_proceso','cancelada'], confirmada: ['en_proceso','cancelada'] },
+  trabajador: { pendiente: ['confirmada','cancelada'], confirmada: ['en_proceso','cancelada'] },
   recepcion:  { pendiente: ['confirmada','cancelada'], confirmada: ['cancelada'] },
-  admin:      { pendiente: ['confirmada','cancelada'], confirmada: ['en_proceso','cancelada'], en_proceso: ['completada'] },
-  jefe:       { pendiente: ['confirmada','cancelada'], confirmada: ['en_proceso','cancelada'], en_proceso: ['completada'] },
+  admin:      { pendiente: ['confirmada','cancelada'], confirmada: ['en_proceso','cancelada'] },
+  jefe:       { pendiente: ['confirmada','cancelada'], confirmada: ['en_proceso','cancelada'] },
 }
 
 const canCerrarServicio = computed(() =>
@@ -63,6 +65,33 @@ const ESTADO_COLOR: Record<string, string> = {
   pendiente: 'bg-yellow-100 text-yellow-800', confirmada: 'bg-green-100 text-green-800',
   en_proceso: 'bg-blue-100 text-blue-800', completada: 'bg-gray-100 text-gray-700',
   cancelada: 'bg-red-100 text-red-800',
+}
+// Botones de acción con nombres de acción (no nombres de estado destino)
+const ACCION_LABEL: Record<string, string> = {
+  confirmada: 'Confirmar cita',
+  en_proceso: 'Iniciar servicio',
+  cancelada:  'Cancelar cita',
+}
+
+// ── Asignación de groomer (recepcion/admin/jefe) ──────────────────────────────
+const canAsignarGroomer = computed(() =>
+  ['admin','jefe','recepcion'].includes(rol.value) &&
+  !cita.value?.id_trabajador &&
+  cita.value?.estado !== 'completada' && cita.value?.estado !== 'cancelada',
+)
+const groomers          = ref<Groomer[]>([])
+const groomerSelId      = ref<string>('')
+const asignandoGroomer  = ref(false)
+
+async function asignarGroomer() {
+  if (!groomerSelId.value || !cita.value) return
+  asignandoGroomer.value = true
+  const ok = await updateCita(idCita.value, { id_trabajador: groomerSelId.value })
+  asignandoGroomer.value = false
+  if (ok) {
+    groomerSelId.value = ''
+    await citasStore.fetchOne(idCita.value)
+  }
 }
 
 function formatFecha(iso: string) {
@@ -230,11 +259,13 @@ async function onDeletePago(id: string) {
 
 // ── Mount ──────────────────────────────────────────────────────────────────────
 onMounted(async () => {
-  await Promise.all([
+  const [, , , res] = await Promise.all([
     citasStore.fetchOne(idCita.value),
     loadAll(idCita.value),
     insumosStore.fetchAll(),
+    agendaDatasource.getGroomers().catch(() => ({ groomers: [] })),
   ])
+  groomers.value = res.groomers
   initFichaForm()
   const today = new Date().toISOString().slice(0, 10)
   reprFecha.value = today
@@ -281,8 +312,9 @@ const totalPagado = computed(() => detalleStore.pagos.reduce((s, p) => s + Numbe
               <span class="ml-2 text-xs">{{ cita.email_cliente }}</span>
             </p>
             <p v-if="cita.nombre_trabajador" class="text-sm text-gray-500">
-              Groomer: {{ cita.nombre_trabajador }}
+              Groomer: <span class="font-medium">{{ cita.nombre_trabajador }}</span>
             </p>
+            <p v-else class="text-sm text-orange-500 dark:text-orange-400 italic">Sin groomer asignado</p>
             <p v-if="cita.notas" class="text-xs italic text-gray-400 mt-1">{{ cita.notas }}</p>
           </div>
           <div class="text-right">
@@ -302,22 +334,42 @@ const totalPagado = computed(() => detalleStore.pagos.reduce((s, p) => s + Numbe
           <BaseButton
             v-for="next in allowedTransitions" :key="next"
             size="sm"
-            :variant="next === 'cancelada' ? 'danger' : next === 'completada' ? 'secondary' : 'primary'"
+            :variant="next === 'cancelada' ? 'danger' : 'primary'"
             :disabled="citasStore.loading"
             @click="onCambiarEstado(next)"
           >
-            → {{ ESTADO_LABEL[next] }}
+            {{ ACCION_LABEL[next] ?? ESTADO_LABEL[next] }}
           </BaseButton>
           <BaseButton v-if="canCerrarServicio"
             size="sm" variant="primary"
             :disabled="citasStore.loading"
             @click="onCerrarServicio">
-            ✓ Cerrar servicio
+            Cerrar servicio
           </BaseButton>
           <BaseButton v-if="canReprogramar && ['pendiente','confirmada'].includes(cita.estado)"
             size="sm" variant="secondary"
             @click="showReprogramar = true">
             Reprogramar
+          </BaseButton>
+        </div>
+      </BaseCard>
+
+      <!-- ── Asignación de groomer (staff) ── -->
+      <BaseCard v-if="canAsignarGroomer && groomers.length > 0">
+        <h2 class="font-semibold text-gray-900 dark:text-white mb-3">Asignar groomer</h2>
+        <div class="flex gap-2 items-end">
+          <div class="flex-1">
+            <label class="block text-xs text-gray-500 mb-1">Selecciona un groomer con especialidad para este servicio</label>
+            <select v-model="groomerSelId"
+              class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none">
+              <option value="">— Seleccionar groomer —</option>
+              <option v-for="g in groomers" :key="g.id_trabajador" :value="g.id_trabajador">
+                {{ g.nombre }}{{ g.especialidad ? ` · ${g.especialidad}` : '' }}
+              </option>
+            </select>
+          </div>
+          <BaseButton size="sm" :disabled="!groomerSelId || asignandoGroomer" :loading="asignandoGroomer" @click="asignarGroomer">
+            Asignar
           </BaseButton>
         </div>
       </BaseCard>

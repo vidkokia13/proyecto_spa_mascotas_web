@@ -4,6 +4,7 @@ import type {
   HorarioListResponse, HorarioResponse, SetHorarioPayload,
   BloqueoListResponse, BloqueoResponse, CreateBloqueoPayload,
   SlotsResponse, SetDisponibilidadPayload, Disponibilidad,
+  GroomersResponse,
 } from '@/shared/types/agenda.types'
 
 export const agendaDatasource = {
@@ -55,6 +56,12 @@ export const agendaDatasource = {
 
   async deleteBloqueo(id: string): Promise<void> {
     await http.delete(API_ENDPOINTS.AGENDA.BLOQUEO_ID(id))
+  },
+
+  // ── Groomers ─────────────────────────────────────────────────────────────────
+  async getGroomers(): Promise<GroomersResponse> {
+    const { data } = await http.get<GroomersResponse>(API_ENDPOINTS.AGENDA.GROOMERS)
+    return data
   },
 
   // ── Slots ─────────────────────────────────────────────────────────────────────

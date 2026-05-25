@@ -131,6 +131,14 @@ export interface CreateBloqueoPayload {
 export interface BloqueoListResponse { bloqueos: Bloqueo[] }
 export interface BloqueoResponse     { bloqueo:  Bloqueo }
 
+// ── Groomers ──────────────────────────────────────────────────────────────────
+export interface Groomer {
+  id_trabajador: string
+  nombre:        string
+  especialidad:  string | null
+}
+export interface GroomersResponse { groomers: Groomer[] }
+
 // ── Slots ─────────────────────────────────────────────────────────────────────
 export interface Slot {
   hora:            string

@@ -127,10 +127,22 @@ async function updateByUserId(idUsuario, fields, client = db) {
   return rows[0] || null;
 }
 
+async function findActiveGroomers(client = db) {
+  const { rows } = await client.query(
+    `SELECT t.id_trabajador, u.nombre, t.especialidad
+     FROM trabajadores t
+     JOIN usuarios u ON u.id_usuario = t.id_usuario
+     WHERE t.activo = true AND u.estado = 'activo'
+     ORDER BY u.nombre ASC`,
+  );
+  return rows;
+}
+
 module.exports = {
   create,
   findByUserId,
   findDetailedByUserId,
   listAll,
+  findActiveGroomers,
   updateByUserId,
 };

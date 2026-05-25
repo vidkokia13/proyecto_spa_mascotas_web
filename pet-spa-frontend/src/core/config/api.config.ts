@@ -40,6 +40,7 @@ export const API_ENDPOINTS = {
   },
   AGENDA: {
     SLOTS:      '/agenda/slots',
+    GROOMERS:   '/agenda/groomers',
     BLOQUEOS:   '/agenda/bloqueos',
     BLOQUEO_ID: (id: string) => `/agenda/bloqueos/${id}`,
   },
