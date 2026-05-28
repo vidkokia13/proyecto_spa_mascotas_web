@@ -50,9 +50,13 @@ const TRANSITIONS: Record<string, Record<string, EstadoCita[]>> = {
   jefe:       { pendiente: ['confirmada','cancelada'], confirmada: ['en_proceso','cancelada'] },
 }
 
-const canCerrarServicio = computed(() =>
+const showCerrarServicio = computed(() =>
   ['trabajador','admin','jefe'].includes(rol.value) && cita.value?.estado === 'en_proceso',
 )
+const checklistCompleto = computed(() =>
+  detalleStore.checklist.length === 0 || detalleStore.checklist.every(i => i.completado),
+)
+const canCerrarServicio = computed(() => showCerrarServicio.value && checklistCompleto.value)
 const allowedTransitions = computed(() =>
   cita.value ? (TRANSITIONS[rol.value]?.[cita.value.estado] ?? []) : [],
 )
@@ -340,9 +344,10 @@ const totalPagado = computed(() => detalleStore.pagos.reduce((s, p) => s + Numbe
           >
             {{ ACCION_LABEL[next] ?? ESTADO_LABEL[next] }}
           </BaseButton>
-          <BaseButton v-if="canCerrarServicio"
+          <BaseButton v-if="showCerrarServicio"
             size="sm" variant="primary"
-            :disabled="citasStore.loading"
+            :disabled="citasStore.loading || !checklistCompleto"
+            :title="!checklistCompleto ? 'Completa todos los ítems del checklist primero' : ''"
             @click="onCerrarServicio">
             Cerrar servicio
           </BaseButton>

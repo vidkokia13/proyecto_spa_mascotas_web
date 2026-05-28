@@ -1,52 +1,50 @@
 'use strict';
 
-const multer = require('multer');
-const path   = require('path');
-const fs     = require('fs');
+const multer              = require('multer');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const { cloudinary }      = require('../config/cloudinary');
 
-function ensureDir(dir) {
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-}
+// ── Helpers ──────────────────────────────────────────────────────────────────
+const imageFilter = (req, file, cb) => {
+  if (/^image\/(jpeg|png|webp)$/.test(file.mimetype)) return cb(null, true);
+  cb(new Error('Solo se permiten imágenes JPG, PNG o WebP.'));
+};
 
-function makeStorage(subdir) {
-  const dir = path.join(__dirname, '..', '..', 'uploads', subdir);
-  ensureDir(dir);
-  return multer.diskStorage({
-    destination: (_req, _file, cb) => cb(null, dir),
-    filename: (_req, file, cb) => {
-      const ext  = path.extname(file.originalname).toLowerCase();
-      const name = `${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`;
-      cb(null, name);
-    },
-  });
-}
+const imageOrPdfFilter = (req, file, cb) => {
+  if (/^image\/(jpeg|png|webp)$/.test(file.mimetype) || file.mimetype === 'application/pdf') {
+    return cb(null, true);
+  }
+  cb(new Error('Solo se permiten imágenes (JPG, PNG, WebP) o PDF.'));
+};
 
-// Fotos de citas — solo imágenes
-function imageFilter(_req, file, cb) {
-  const allowed = ['.jpg', '.jpeg', '.png', '.webp'];
-  const ext = path.extname(file.originalname).toLowerCase();
-  if (allowed.includes(ext)) cb(null, true);
-  else cb(new Error('Solo se permiten imágenes JPG, PNG o WEBP.'), false);
-}
-
-const upload = multer({
-  storage: makeStorage('citas'),
-  fileFilter: imageFilter,
-  limits: { fileSize: 5 * 1024 * 1024 },
+// ── Fotos de citas (imágenes) ────────────────────────────────────────────────
+const citasStorage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder:        'pet-spa/citas',
+    resource_type: 'image',
+  },
 });
 
-// Carnet de vacunas — imágenes o PDF
-function carnetFilter(_req, file, cb) {
-  const allowed = ['.jpg', '.jpeg', '.png', '.webp', '.pdf'];
-  const ext = path.extname(file.originalname).toLowerCase();
-  if (allowed.includes(ext)) cb(null, true);
-  else cb(new Error('Solo se permiten imágenes o PDF para el carnet.'), false);
-}
+const upload = multer({
+  storage:    citasStorage,
+  limits:     { fileSize: 5 * 1024 * 1024 },
+  fileFilter: imageFilter,
+});
+
+// ── Carnet de vacunas (imágenes o PDF) ───────────────────────────────────────
+const carnetStorage = new CloudinaryStorage({
+  cloudinary,
+  params: (req, file) => ({
+    folder:        'pet-spa/carnets',
+    resource_type: file.mimetype === 'application/pdf' ? 'raw' : 'image',
+  }),
+});
 
 const uploadCarnet = multer({
-  storage: makeStorage('carnets'),
-  fileFilter: carnetFilter,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB para PDFs
+  storage:    carnetStorage,
+  limits:     { fileSize: 10 * 1024 * 1024 },
+  fileFilter: imageOrPdfFilter,
 });
 
 module.exports = { upload, uploadCarnet };

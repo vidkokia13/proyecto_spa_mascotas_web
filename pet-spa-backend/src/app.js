@@ -48,7 +48,7 @@ app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 // --- Rate limit global suave (defensa en profundidad) ---
 app.use(rateLimit({
   windowMs: env.rateLimit.windowMs,
-  max: env.rateLimit.max,
+  max: env.nodeEnv === 'development' ? 0 : env.rateLimit.max,
   standardHeaders: true,
   legacyHeaders: false,
 }));

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useMascotas } from '@/presentation/composables/useMascotas'
 import BaseCard from '@/presentation/components/ui/BaseCard.vue'
 import BaseButton from '@/presentation/components/ui/BaseButton.vue'
@@ -10,12 +10,13 @@ import type { Mascota, CreateMascotaPayload } from '@/shared/types/agenda.types'
 
 const { store, loadAll, createMascota, updateMascota, removeMascota, subirCarnet } = useMascotas()
 
-const showModal    = ref(false)
-const editing      = ref<Mascota | null>(null)
-const confirmDel   = ref<string | null>(null)
-const carnetId     = ref<string | null>(null)
-const carnetFile   = ref<File | null>(null)
-const carnetInput  = ref<HTMLInputElement | null>(null)
+const showModal   = ref(false)
+const editing     = ref<Mascota | null>(null)
+const confirmDel  = ref<string | null>(null)
+
+const carnetId    = ref<string | null>(null)
+const carnetFile  = ref<File | null>(null)
+const carnetInput = ref<HTMLInputElement | null>(null)
 
 const TAMANOS       = ['pequeno', 'mediano', 'grande', 'gigante'] as const
 const TEMPERAMENTOS = ['tranquilo', 'nervioso', 'agresivo', 'inquieto'] as const
@@ -51,8 +52,8 @@ const emptyForm = (): CreateMascotaPayload => ({
 const form = ref<CreateMascotaPayload>(emptyForm())
 
 function openCreate() {
-  editing.value = null
-  form.value    = emptyForm()
+  editing.value   = null
+  form.value      = emptyForm()
   showModal.value = true
 }
 
@@ -114,7 +115,7 @@ function calcEdad(fechaNac: string | null): string {
   return meses > 0 ? `${meses} mes${meses !== 1 ? 'es' : ''}` : 'Recién nacido'
 }
 
-const isCarnetPdf = (url: string) => url.toLowerCase().endsWith('.pdf')
+const isCarnetPdf = (url: string) => url.toLowerCase().includes('/raw/')
 
 const inputClass = 'w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none'
 
@@ -129,7 +130,6 @@ onMounted(() => loadAll())
       <BaseButton @click="openCreate">+ Registrar mascota</BaseButton>
     </div>
 
-    <!-- Hidden file input for carnet -->
     <input
       ref="carnetInput"
       type="file"
@@ -153,28 +153,39 @@ onMounted(() => loadAll())
 
     <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <BaseCard v-for="m in store.mascotas" :key="m.id_mascota" class="flex flex-col gap-3">
-        <!-- Name + actions -->
-        <div class="flex items-start justify-between">
-          <div>
-            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ m.nombre }}</h2>
-            <p class="text-sm text-gray-500 capitalize">
-              {{ m.especie }}<span v-if="m.raza"> · {{ m.raza }}</span>
-              <span v-if="m.fecha_nacimiento" class="text-gray-400"> · {{ calcEdad(m.fecha_nacimiento) }}</span>
-            </p>
+        <!-- Avatar + Nombre + acciones -->
+        <div class="flex items-start gap-3">
+          <div class="flex-shrink-0 w-14 h-14 rounded-xl bg-primary-50 dark:bg-primary-900/30 flex items-center justify-center ring-2 ring-primary-100 dark:ring-primary-900">
+            <svg class="w-7 h-7 text-primary-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            </svg>
           </div>
-          <div class="flex gap-2">
-            <button class="text-gray-400 hover:text-primary-600 transition" title="Editar" @click="openEdit(m)">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-            </button>
-            <button class="text-gray-400 hover:text-red-500 transition" title="Eliminar" @click="confirmDel = m.id_mascota">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-            </button>
+
+          <div class="flex-1 min-w-0">
+            <div class="flex items-start justify-between">
+              <div>
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ m.nombre }}</h2>
+                <p class="text-sm text-gray-500 capitalize">
+                  {{ m.especie }}<span v-if="m.raza"> · {{ m.raza }}</span>
+                  <span v-if="m.fecha_nacimiento" class="text-gray-400"> · {{ calcEdad(m.fecha_nacimiento) }}</span>
+                </p>
+              </div>
+              <div class="flex gap-2 flex-shrink-0">
+                <button class="text-gray-400 hover:text-primary-600 transition" title="Editar" @click="openEdit(m)">
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                </button>
+                <button class="text-gray-400 hover:text-red-500 transition" title="Eliminar" @click="confirmDel = m.id_mascota">
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -206,12 +217,8 @@ onMounted(() => loadAll())
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            <span v-if="m.carnet_vacunas_url" class="text-xs text-gray-600 dark:text-gray-400 truncate">
-              <a
-                :href="m.carnet_vacunas_url"
-                target="_blank"
-                class="text-primary-600 hover:underline"
-              >
+            <span v-if="m.carnet_vacunas_url" class="text-xs truncate">
+              <a :href="m.carnet_vacunas_url" target="_blank" class="text-primary-600 hover:underline">
                 {{ isCarnetPdf(m.carnet_vacunas_url) ? 'Ver carnet (PDF)' : 'Ver carnet (imagen)' }}
               </a>
             </span>

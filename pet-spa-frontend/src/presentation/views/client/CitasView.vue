@@ -122,8 +122,15 @@ onMounted(() => loadMisCitas())
             </p>
           </div>
 
-          <div v-if="esCancelable(c)" class="flex-shrink-0">
-            <BaseButton variant="danger" size="sm" :disabled="store.loading" @click="openCancelar(c)">
+          <div class="flex gap-2 flex-shrink-0">
+            <BaseButton
+              v-if="c.estado === 'completada'"
+              variant="secondary" size="sm"
+              @click="router.push({ name: ROUTE_NAMES.CLIENT_RESUMEN_CITA, params: { id: c.id_cita } })"
+            >
+              Ver resumen
+            </BaseButton>
+            <BaseButton v-if="esCancelable(c)" variant="danger" size="sm" :disabled="store.loading" @click="openCancelar(c)">
               Cancelar
             </BaseButton>
           </div>

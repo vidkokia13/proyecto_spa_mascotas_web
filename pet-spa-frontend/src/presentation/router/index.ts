@@ -225,6 +225,13 @@ const router = createRouter({
           meta: { requiresAuth: true, layout: 'dashboard' },
           beforeEnter: roleGuard([ROLES.CLIENTE]),
         },
+        {
+          path: 'citas/:id/resumen',
+          name: ROUTE_NAMES.CLIENT_RESUMEN_CITA,
+          component: () => import('@/presentation/views/client/ResumenServicioView.vue'),
+          meta: { requiresAuth: true, layout: 'dashboard' },
+          beforeEnter: roleGuard([ROLES.CLIENTE]),
+        },
       ],
     },
 

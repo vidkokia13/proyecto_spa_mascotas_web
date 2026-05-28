@@ -193,7 +193,8 @@ const filteredRows = computed(() => {
               v-model="createForm.rol"
               class="block w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
-              <option value="trabajador">Empleado</option>
+              <option value="trabajador">Groomer / Empleado</option>
+              <option value="recepcion">Recepcionista</option>
               <option value="jefe">Jefe</option>
               <option value="admin">Administrador</option>
             </select>

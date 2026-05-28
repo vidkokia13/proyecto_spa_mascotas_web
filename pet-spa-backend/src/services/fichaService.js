@@ -11,11 +11,11 @@ async function getFicha(idCita) {
 }
 
 async function saveFicha({ idCita, estadoPelaje, condicionPiel, observaciones, pesoActual,
-  estadoIngreso, recomendaciones, idUsuario, rol }) {
+  estadoIngreso, recomendaciones, idUsuario, idTrabajador, rol }) {
   const cita = await citaRepo.findById(idCita);
   if (!cita) throw new AppError('Cita no encontrada.', 404, 'CITA_NOT_FOUND');
 
-  if (rol === 'trabajador' && cita.id_trabajador !== idUsuario) {
+  if (rol === 'trabajador' && cita.id_trabajador && cita.id_trabajador !== idTrabajador) {
     throw new AppError('Solo puedes registrar fichas de tus propias citas.', 403, 'FORBIDDEN');
   }
 

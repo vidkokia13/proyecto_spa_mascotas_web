@@ -24,10 +24,10 @@ async function listByCita(req, res) {
 }
 
 async function registrar(req, res) {
-  const { id_usuario: idUsuario, rol } = req.user;
+  const { id_usuario: idUsuario, id_trabajador: idTrabajador, rol } = req.user;
   const { idCita, insumos } = req.body;
-  const result = await insumoService.registrarInsumos({ idCita, idUsuario, rol, insumos });
-  res.status(201).json({ registros: result });
+  const result = await insumoService.registrarInsumos({ idCita, idUsuario, idTrabajador, rol, insumos });
+  res.status(201).json({ insumos: result });
 }
 
 async function actualizarRegistro(req, res) {

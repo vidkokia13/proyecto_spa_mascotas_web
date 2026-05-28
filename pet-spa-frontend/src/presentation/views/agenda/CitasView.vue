@@ -21,13 +21,13 @@ const filterEstado = ref<EstadoCita | ''>('')
 
 const ESTADO_LABEL: Record<string, string> = {
   pendiente: 'Pendiente', confirmada: 'Confirmada', en_proceso: 'En proceso',
-  completada: 'Completada', cancelada: 'Cancelada',
+  completada: 'Cerrado', cancelada: 'Cancelada',
 }
 const ESTADO_COLOR: Record<string, string> = {
   pendiente:  'bg-yellow-100 text-yellow-800',
   confirmada: 'bg-green-100 text-green-800',
   en_proceso: 'bg-blue-100 text-blue-800',
-  completada: 'bg-gray-100 text-gray-700',
+  completada: 'bg-purple-100 text-purple-700',
   cancelada:  'bg-red-100 text-red-800',
 }
 

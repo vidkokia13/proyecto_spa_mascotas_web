@@ -25,10 +25,10 @@ async function getCitaInsumos(idCita) {
   return insumoRepo.findByCita(idCita);
 }
 
-async function registrarInsumos({ idCita, idUsuario, rol, insumos }) {
+async function registrarInsumos({ idCita, idUsuario, idTrabajador, rol, insumos }) {
   const cita = await citaRepo.findById(idCita);
   if (!cita) throw new AppError('Cita no encontrada.', 404, 'CITA_NOT_FOUND');
-  if (rol === 'trabajador' && cita.id_trabajador !== idUsuario) {
+  if (rol === 'trabajador' && cita.id_trabajador && cita.id_trabajador !== idTrabajador) {
     throw new AppError('Solo puedes registrar insumos de tus propias citas.', 403, 'FORBIDDEN');
   }
 
@@ -38,8 +38,10 @@ async function registrarInsumos({ idCita, idUsuario, rol, insumos }) {
       const insumo = await insumoRepo.findById(item.idInsumo, client);
       if (!insumo) throw new AppError(`Insumo ${item.idInsumo} no encontrado.`, 404, 'INSUMO_NOT_FOUND');
 
-      // Descuenta del stock la cantidad usada
-      const delta = -(item.cantidadUsada ?? 0);
+      // Descuenta del stock: lo entregado al groomer menos lo devuelto
+      const cantidadRecibida = item.cantidadRecibida ?? 0;
+      const cantidadDevuelta = item.cantidadDevuelta ?? 0;
+      const delta = cantidadDevuelta - cantidadRecibida;
       if (insumo.stock + delta < 0) {
         throw new AppError(`Stock insuficiente para "${insumo.nombre}".`, 409, 'INSUFFICIENT_STOCK');
       }

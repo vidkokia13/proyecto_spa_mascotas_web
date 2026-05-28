@@ -11,13 +11,14 @@ async function upload(req, res) {
   if (!req.file) {
     return res.status(400).json({ error: 'No se recibió ningún archivo.' });
   }
-  const { id_usuario: idUsuario, rol } = req.user;
+  const { id_usuario: idUsuario, id_trabajador: idTrabajador, rol } = req.user;
   const tipo = req.body.tipo ?? 'antes';
   const foto = await fotoService.uploadFoto({
-    idCita: req.params.idCita,
+    idCita:      req.params.idCita,
     tipo,
-    filename: req.file.filename,
+    url:         req.file.path,
     idUsuario,
+    idTrabajador,
     rol,
   });
   res.status(201).json({ foto });

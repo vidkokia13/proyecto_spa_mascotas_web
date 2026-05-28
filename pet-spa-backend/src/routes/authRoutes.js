@@ -14,7 +14,7 @@ const router = Router();
 
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: process.env.NODE_ENV === 'development' ? 100 : 10,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: { message: 'Demasiados intentos, probá más tarde.', code: 'RATE_LIMITED' } },

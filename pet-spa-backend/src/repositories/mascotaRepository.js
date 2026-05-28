@@ -50,7 +50,7 @@ async function findByClienteId(idCliente, client = db) {
 
 async function update(idMascota, fields, client = db) {
   const allowed = ['nombre','especie','raza','tamano','temperamento','fecha_nacimiento',
-    'alergias','tiempo_extra_min','peso_kg','notas','activo','foto_url','carnet_vacunas_url'];
+    'alergias','tiempo_extra_min','peso_kg','notas','activo','carnet_vacunas_url'];
   const setClauses = [];
   const values = [];
   let i = 1;

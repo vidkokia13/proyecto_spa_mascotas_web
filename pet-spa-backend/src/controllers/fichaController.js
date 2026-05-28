@@ -8,12 +8,12 @@ async function get(req, res) {
 }
 
 async function save(req, res) {
-  const { id_usuario: idUsuario, rol } = req.user;
+  const { id_usuario: idUsuario, id_trabajador: idTrabajador, rol } = req.user;
   const { idCita, estadoPelaje, condicionPiel, observaciones, pesoActual,
     estadoIngreso, recomendaciones } = req.body;
   const ficha = await fichaService.saveFicha({
     idCita, estadoPelaje, condicionPiel, observaciones, pesoActual,
-    estadoIngreso, recomendaciones, idUsuario, rol,
+    estadoIngreso, recomendaciones, idUsuario, idTrabajador, rol,
   });
   res.status(201).json({ ficha });
 }

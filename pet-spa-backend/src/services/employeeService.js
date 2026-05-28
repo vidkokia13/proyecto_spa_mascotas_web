@@ -8,7 +8,7 @@ const auditService = require('./auditService');
 const { hashPassword } = require('../utils/password');
 const AppError = require('../utils/AppError');
 
-const ROLES_INTERNOS = ['trabajador', 'admin', 'jefe'];
+const ROLES_INTERNOS = ['trabajador', 'recepcion', 'admin', 'jefe'];
 
 async function createEmployee(payload, actor, ctx = {}) {
   if (!ROLES_INTERNOS.includes(payload.rol)) {

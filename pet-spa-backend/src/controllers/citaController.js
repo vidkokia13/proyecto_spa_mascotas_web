@@ -47,7 +47,7 @@ async function listRango(req, res) {
 
 async function cambiarEstado(req, res) {
   const updated = await citaService.cambiarEstado(
-    req.params.id, req.body.estado, req.user.id_usuario, req.user.rol, req.ip,
+    req.params.id, req.body.estado, req.user.id_usuario, req.user.id_trabajador, req.user.rol, req.ip,
   );
   res.json({ cita: updated });
 }
@@ -90,7 +90,7 @@ async function miAgenda(req, res) {
 
 async function cerrarServicio(req, res) {
   const updated = await citaService.cerrarServicio(
-    req.params.id, req.user.id_usuario, req.user.rol, req.ip,
+    req.params.id, req.user.id_usuario, req.user.id_trabajador, req.user.rol, req.ip,
   );
   res.json({ cita: updated });
 }

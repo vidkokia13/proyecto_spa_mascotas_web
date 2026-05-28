@@ -127,7 +127,7 @@ async function getCitasRango({ fechaInicio, fechaFin, idTrabajador = null, estad
   return citaRepo.findInRange(fechaInicio, fechaFin, { idTrabajador, estado });
 }
 
-async function cambiarEstado(idCita, estado, idUsuario, rol, ipAddress = null) {
+async function cambiarEstado(idCita, estado, idUsuario, idTrabajador, rol, ipAddress = null) {
   const cita = await citaRepo.findById(idCita);
   if (!cita) throw new AppError('Cita no encontrada.', 404, 'CITA_NOT_FOUND');
 
@@ -150,7 +150,21 @@ async function cambiarEstado(idCita, estado, idUsuario, rol, ipAddress = null) {
     throw new AppError('No tienes acceso a esta cita.', 403, 'FORBIDDEN');
   }
 
-  const updated = await citaRepo.updateEstado(idCita, estado);
+  // Groomer: block if cita belongs to another groomer; auto-assign if unassigned
+  const updateFields = { estado };
+  if (rol === 'trabajador') {
+    if (cita.id_trabajador && cita.id_trabajador !== idTrabajador) {
+      throw new AppError('Esta cita está asignada a otro groomer.', 403, 'FORBIDDEN');
+    }
+    if (!cita.id_trabajador) {
+      updateFields.id_trabajador = idTrabajador;
+    }
+  }
+
+  const updated = (updateFields.id_trabajador)
+    ? await citaRepo.update(idCita, updateFields)
+    : await citaRepo.updateEstado(idCita, estado);
+
   await auditService.log({ idUsuario, accion: 'CITA_ESTADO_CAMBIADO', detalle: `Cita ${idCita}: ${cita.estado} → ${estado}`, ipAddress });
 
   // Notificaciones asíncronas — no bloquean la respuesta
@@ -314,12 +328,12 @@ async function getMiAgenda(idUsuario, { fechaInicio, fechaFin } = {}) {
 }
 
 // ── Módulo 6: Cierre atómico del servicio ────────────────────────────────────
-async function cerrarServicio(idCita, idUsuario, rol, ipAddress = null) {
+async function cerrarServicio(idCita, idUsuario, idTrabajador, rol, ipAddress = null) {
   const cita = await citaRepo.findById(idCita);
   if (!cita) throw new AppError('Cita no encontrada.', 404, 'CITA_NOT_FOUND');
 
   // Sólo el groomer asignado (o admin/jefe) puede cerrar
-  if (rol === 'trabajador' && cita.id_trabajador !== idUsuario) {
+  if (rol === 'trabajador' && cita.id_trabajador && cita.id_trabajador !== idTrabajador) {
     throw new AppError('Solo puedes cerrar tus propias citas.', 403, 'FORBIDDEN');
   }
 

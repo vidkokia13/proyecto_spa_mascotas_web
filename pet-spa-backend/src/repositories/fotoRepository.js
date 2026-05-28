@@ -1,10 +1,7 @@
 'use strict';
 
-const db   = require('../config/db');
-const fs   = require('fs');
-const path = require('path');
-
-const UPLOADS_DIR = path.join(__dirname, '..', '..', 'uploads', 'citas');
+const db                        = require('../config/db');
+const { cloudinary, extractPublicId } = require('../config/cloudinary');
 
 async function create({ idCita, tipo, url, subidoPor = null }, client = db) {
   const { rows } = await client.query(
@@ -36,10 +33,11 @@ async function remove(idFoto, client = db) {
   const foto = await findById(idFoto, client);
   if (!foto) return;
   await client.query('DELETE FROM cita_fotos WHERE id_foto = $1', [idFoto]);
-  // Delete physical file
-  const filename = path.basename(foto.url);
-  const filePath = path.join(UPLOADS_DIR, filename);
-  try { fs.unlinkSync(filePath); } catch { /* file may not exist */ }
+  // Eliminar de Cloudinary (best-effort, sin bloquear la respuesta)
+  const publicId = extractPublicId(foto.url);
+  if (publicId) {
+    cloudinary.uploader.destroy(publicId).catch(() => {});
+  }
 }
 
 module.exports = { create, findByCita, findById, remove };

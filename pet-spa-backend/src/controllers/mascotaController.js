@@ -5,7 +5,6 @@ const AppError       = require('../utils/AppError');
 
 async function listar(req, res) {
   const { id_usuario: idUsuario, rol } = req.user;
-  // Admin/jefe/recepcion/trabajador can query by ?idUsuario=; cliente only sees own
   const target = (['admin','jefe','recepcion','trabajador'].includes(rol) && req.query.idUsuario)
     ? req.query.idUsuario
     : idUsuario;
@@ -20,7 +19,6 @@ async function getOne(req, res) {
 
 async function crear(req, res) {
   const { id_usuario: idUsuario, rol } = req.user;
-  // Receptionist/admin can create for another user
   const targetUsuario = (['admin','jefe','recepcion'].includes(rol) && req.body.idUsuario)
     ? req.body.idUsuario
     : idUsuario;
@@ -40,7 +38,7 @@ async function eliminar(req, res) {
 
 async function subirCarnet(req, res) {
   if (!req.file) throw new AppError('No se recibió ningún archivo.', 400, 'NO_FILE');
-  const url = `/uploads/carnets/${req.file.filename}`;
+  const url = req.file.path;
   const mascota = await mascotaService.updateMascota(
     req.params.id, req.user.id_usuario, req.user.rol, { carnet_vacunas_url: url },
   );

@@ -1,11 +1,8 @@
 'use strict';
 
-const path      = require('path');
 const fotoRepo  = require('../repositories/fotoRepository');
 const citaRepo  = require('../repositories/citaRepository');
 const AppError  = require('../utils/AppError');
-
-const BASE_URL = process.env.APP_BASE_URL || 'http://localhost:3000';
 
 async function getFotos(idCita) {
   const cita = await citaRepo.findById(idCita);
@@ -13,14 +10,13 @@ async function getFotos(idCita) {
   return fotoRepo.findByCita(idCita);
 }
 
-async function uploadFoto({ idCita, tipo, filename, idUsuario, rol }) {
+async function uploadFoto({ idCita, tipo, url, idUsuario, idTrabajador, rol }) {
   const cita = await citaRepo.findById(idCita);
   if (!cita) throw new AppError('Cita no encontrada.', 404, 'CITA_NOT_FOUND');
-  if (rol === 'trabajador' && cita.id_trabajador !== idUsuario) {
+  if (rol === 'trabajador' && cita.id_trabajador && cita.id_trabajador !== idTrabajador) {
     throw new AppError('Solo puedes subir fotos de tus propias citas.', 403, 'FORBIDDEN');
   }
 
-  const url = `${BASE_URL}/uploads/citas/${filename}`;
   return fotoRepo.create({ idCita, tipo, url, subidoPor: idUsuario });
 }
 

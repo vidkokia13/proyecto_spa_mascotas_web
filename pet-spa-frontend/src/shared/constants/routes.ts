@@ -23,10 +23,11 @@ export const ROUTE_NAMES = {
 
   RECEPCION_DASHBOARD: 'recepcion-dashboard',
 
-  CLIENT_PROFILE:    'client-profile',
-  CLIENT_MASCOTAS:   'client-mascotas',
-  CLIENT_CITAS:      'client-citas',
-  CLIENT_NUEVA_CITA: 'client-nueva-cita',
+  CLIENT_PROFILE:        'client-profile',
+  CLIENT_MASCOTAS:       'client-mascotas',
+  CLIENT_CITAS:          'client-citas',
+  CLIENT_NUEVA_CITA:     'client-nueva-cita',
+  CLIENT_RESUMEN_CITA:   'client-resumen-cita',
 
   AGENDA_CITAS:       'agenda-citas',
   AGENDA_HORARIOS:    'agenda-horarios',
@@ -59,10 +60,11 @@ export const ROUTE_PATHS = {
 
   RECEPCION_DASHBOARD: '/recepcion/dashboard',
 
-  CLIENT_PROFILE:    '/client/profile',
-  CLIENT_MASCOTAS:   '/client/mascotas',
-  CLIENT_CITAS:      '/client/citas',
-  CLIENT_NUEVA_CITA: '/client/nueva-cita',
+  CLIENT_PROFILE:      '/client/profile',
+  CLIENT_MASCOTAS:     '/client/mascotas',
+  CLIENT_CITAS:        '/client/citas',
+  CLIENT_NUEVA_CITA:   '/client/nueva-cita',
+  CLIENT_RESUMEN_CITA: '/client/citas/:id/resumen',
 
   AGENDA_CITAS:       '/agenda/citas',
   AGENDA_HORARIOS:    '/agenda/horarios',

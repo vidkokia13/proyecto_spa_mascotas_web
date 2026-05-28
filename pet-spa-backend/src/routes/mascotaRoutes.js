@@ -17,7 +17,7 @@ router.post('/',     validate(mascotaValidators.create,  'body'),   asyncHandler
 router.patch('/:id', validate(mascotaValidators.idParam, 'params'), validate(mascotaValidators.update, 'body'), asyncHandler(mascotaController.actualizar));
 router.delete('/:id',validate(mascotaValidators.idParam, 'params'), asyncHandler(mascotaController.eliminar));
 
-// Carnet de vacunas — cliente o staff puede subir
+// Carnet de vacunas (imagen o PDF)
 router.post('/:id/carnet', validate(mascotaValidators.idParam, 'params'), uploadCarnet.single('carnet'), asyncHandler(mascotaController.subirCarnet));
 
 module.exports = router;

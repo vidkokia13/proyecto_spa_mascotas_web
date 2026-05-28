@@ -20,6 +20,7 @@ export interface Mascota {
   creado_en:          string
 }
 
+
 export interface CreateMascotaPayload {
   nombre:           string
   especie?:         string

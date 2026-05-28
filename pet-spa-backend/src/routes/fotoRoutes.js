@@ -13,7 +13,7 @@ router.use(authRequired);
 router.get('/cita/:idCita',  asyncHandler(fotoController.list));
 router.post(
   '/cita/:idCita',
-  requireRole('trabajador','admin','jefe','recepcion'),
+  requireRole('trabajador','admin','jefe'),
   upload.single('foto'),
   asyncHandler(fotoController.upload),
 );

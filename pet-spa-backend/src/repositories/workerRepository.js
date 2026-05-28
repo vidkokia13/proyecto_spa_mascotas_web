@@ -132,7 +132,8 @@ async function findActiveGroomers(client = db) {
     `SELECT t.id_trabajador, u.nombre, t.especialidad
      FROM trabajadores t
      JOIN usuarios u ON u.id_usuario = t.id_usuario
-     WHERE t.activo = true AND u.estado = 'activo'
+     JOIN roles    r ON r.id_rol     = u.id_rol
+     WHERE t.activo = true AND u.estado = 'activo' AND r.nombre = 'trabajador'
      ORDER BY u.nombre ASC`,
   );
   return rows;
