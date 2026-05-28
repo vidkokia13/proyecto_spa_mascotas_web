@@ -310,12 +310,13 @@ export interface FotoResponse     { foto:  Foto  }
 
 // ── Insumos ───────────────────────────────────────────────────────────────────
 export interface Insumo {
-  id_insumo: string
-  nombre:    string
-  unidad:    string
-  stock:     number
-  activo:    boolean
-  creado_en: string
+  id_insumo:    string
+  nombre:       string
+  unidad:       string
+  stock:        number
+  stock_minimo: number
+  activo:       boolean
+  creado_en:    string
 }
 export interface CitaInsumo {
   id_cita_insumo:    string
@@ -334,12 +335,48 @@ export interface InsumoListResponse    { insumos: Insumo[]    }
 export interface CitaInsumoListResponse{ insumos: CitaInsumo[] }
 
 export interface CreateInsumoPayload {
-  nombre:  string
-  unidad:  string
-  stock?:  number
+  nombre:       string
+  unidad:       string
+  stock?:       number
+  stockMinimo?: number
 }
 export interface UpdateInsumoPayload extends Partial<CreateInsumoPayload> {
-  activo?: boolean
+  stock_minimo?: number
+  activo?:       boolean
+}
+export interface AlertasInsumoResponse { insumos: Insumo[]; total: number }
+export interface InsumoLog {
+  id_cita_insumo:    string
+  id_cita:           string
+  id_insumo:         string
+  cantidad_recibida: number
+  cantidad_usada:    number
+  cantidad_devuelta: number
+  desperdicio:       number
+  creado_en:         string
+  nombre_insumo:     string
+  unidad:            string
+  id_trabajador:     string | null
+  nombre_groomer:    string | null
+}
+export interface InsumoLogResponse { registros: InsumoLog[]; total: number }
+export interface InsumoAlerta { tipo: 'stock_critico' | 'consumo_elevado'; mensaje: string }
+export interface InsumoPrediccion {
+  id_insumo:           string
+  nombre:              string
+  unidad:              string
+  stock:               number
+  stock_minimo:        number
+  num_servicios:       number
+  promedio_uso:        number
+  servicios_restantes: number | null
+  pct_desperdicio:     number
+  alertas:             InsumoAlerta[]
+}
+export interface InsumoPrediccionResponse {
+  items:         InsumoPrediccion[]
+  alertas:       InsumoPrediccion[]
+  total_alertas: number
 }
 export interface RegisterInsumosItemPayload {
   idInsumo:          string

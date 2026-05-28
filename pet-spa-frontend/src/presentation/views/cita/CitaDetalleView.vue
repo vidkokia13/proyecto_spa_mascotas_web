@@ -14,7 +14,8 @@ import { ROUTE_NAMES }   from '@/shared/constants/routes'
 import BaseCard    from '@/presentation/components/ui/BaseCard.vue'
 import BaseButton  from '@/presentation/components/ui/BaseButton.vue'
 import BaseBadge   from '@/presentation/components/ui/BaseBadge.vue'
-import BaseModal   from '@/presentation/components/ui/BaseModal.vue'
+import BaseModal        from '@/presentation/components/ui/BaseModal.vue'
+import QrPaymentModal  from '@/presentation/components/ui/QrPaymentModal.vue'
 import type { EstadoCita, Slot, MetodoPago, TipoFoto, RegisterInsumosItemPayload } from '@/shared/types/agenda.types'
 
 const route    = useRoute()
@@ -56,7 +57,19 @@ const showCerrarServicio = computed(() =>
 const checklistCompleto = computed(() =>
   detalleStore.checklist.length === 0 || detalleStore.checklist.every(i => i.completado),
 )
-const canCerrarServicio = computed(() => showCerrarServicio.value && checklistCompleto.value)
+
+const tienesFotosAntes   = computed(() => detalleStore.fotos.some(f => f.tipo === 'antes'))
+const tienesFotosDespues = computed(() => detalleStore.fotos.some(f => f.tipo === 'despues'))
+
+const canCerrarServicio = computed(() =>
+  showCerrarServicio.value && checklistCompleto.value && tienesFotosDespues.value,
+)
+
+const cerrarTooltip = computed(() => {
+  if (!checklistCompleto.value) return 'Completa todos los ítems del checklist primero'
+  if (!tienesFotosDespues.value) return 'Sube al menos una foto "Después" antes de cerrar'
+  return ''
+})
 const allowedTransitions = computed(() =>
   cita.value ? (TRANSITIONS[rol.value]?.[cita.value.estado] ?? []) : [],
 )
@@ -214,11 +227,22 @@ async function submitInsumo() {
 
 // ── Pagos ──────────────────────────────────────────────────────────────────────
 const showPagoForm   = ref(false)
+const showQrModal    = ref(false)
 const pagoForm       = ref({ monto: '', metodo: 'efectivo' as MetodoPago, referencia: '' })
 const promoCodigo    = ref('')
 const promoVerif     = ref<{ descuento: number; montoFinal: number; nombre: string } | null>(null)
 const promoLoading   = ref(false)
 const promoError     = ref<string | null>(null)
+
+function openPagoForm() {
+  pagoForm.value = {
+    monto:     cita.value?.precio_base != null ? String(cita.value.precio_base) : '',
+    metodo:    'efectivo' as MetodoPago,
+    referencia: '',
+  }
+  clearPromo()
+  showPagoForm.value = true
+}
 
 async function verificarPromo() {
   const monto = parseFloat(pagoForm.value.monto)
@@ -242,6 +266,14 @@ function clearPromo() {
 
 async function submitPago() {
   if (!pagoForm.value.monto) return
+  if (pagoForm.value.metodo === 'qr') {
+    showQrModal.value = true
+    return
+  }
+  await _doRegistrarPago()
+}
+
+async function _doRegistrarPago() {
   const ok = await savePago({
     idCita:           idCita.value,
     monto:            parseFloat(pagoForm.value.monto),
@@ -251,9 +283,14 @@ async function submitPago() {
   })
   if (ok) {
     showPagoForm.value = false
+    showQrModal.value  = false
     pagoForm.value = { monto: '', metodo: 'efectivo', referencia: '' }
     clearPromo()
   }
+}
+
+async function onQrConfirm() {
+  await _doRegistrarPago()
 }
 
 async function onDeletePago(id: string) {
@@ -273,6 +310,10 @@ onMounted(async () => {
   initFichaForm()
   const today = new Date().toISOString().slice(0, 10)
   reprFecha.value = today
+  // Auto-abrir form de pago si la cita ya está completada y no tiene pagos aún
+  if (canManagePagos.value && cita.value?.estado === 'completada' && detalleStore.pagos.length === 0) {
+    openPagoForm()
+  }
 })
 
 onUnmounted(() => detalleStore.reset())
@@ -280,6 +321,39 @@ onUnmounted(() => detalleStore.reset())
 watch(() => detalleStore.ficha, () => { if (!fichaEditMode.value) initFichaForm() })
 
 const totalPagado = computed(() => detalleStore.pagos.reduce((s, p) => s + Number(p.monto), 0))
+
+// ── Compartir por WhatsApp / Telegram ─────────────────────────────────────────
+const mensajeCompartir = computed(() => {
+  if (!cita.value) return ''
+  const c = cita.value
+  const fecha = new Date(c.fecha_hora_inicio).toLocaleString('es-PE', { dateStyle: 'full', timeStyle: 'short' })
+  const precio = Number(c.precio_base).toLocaleString('es-PE')
+  const groomer = c.nombre_trabajador ? `Groomer: ${c.nombre_trabajador}` : ''
+  const pagado  = totalPagado.value > 0 ? `\nPagado: S/ ${totalPagado.value.toLocaleString('es-PE')}` : ''
+  return [
+    'Reserva Pet Spa',
+    `Servicio: ${c.nombre_servicio}`,
+    `Mascota:  ${c.nombre_mascota} (${c.tamano}, ${c.temperamento})`,
+    `Fecha:    ${fecha}`,
+    `Duración: ${c.duracion_ajustada} min`,
+    groomer,
+    `Precio:   S/ ${precio}${pagado}`,
+    `Estado:   ${ESTADO_LABEL[c.estado]}`,
+  ].filter(Boolean).join('\n')
+})
+
+function compartirWhatsApp() {
+  window.open(`https://wa.me/?text=${encodeURIComponent(mensajeCompartir.value)}`, '_blank')
+}
+
+function compartirTelegram() {
+  window.open(`https://t.me/share/url?text=${encodeURIComponent(mensajeCompartir.value)}`, '_blank')
+}
+
+async function copiarMensaje() {
+  await navigator.clipboard.writeText(mensajeCompartir.value)
+  uiStore.showToast('Mensaje copiado', 'success')
+}
 </script>
 
 <template>
@@ -329,11 +403,49 @@ const totalPagado = computed(() => detalleStore.pagos.reduce((s, p) => s + Numbe
             <p v-if="totalPagado > 0" class="text-xs text-green-600 dark:text-green-400 mt-1">
               Pagado: ${{ totalPagado.toLocaleString('es-CL') }}
             </p>
+            <!-- Compartir -->
+            <div class="flex gap-1 justify-end mt-3">
+              <button title="Compartir por WhatsApp"
+                class="p-1.5 rounded-lg bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/40 transition-colors"
+                @click="compartirWhatsApp">
+                <svg class="w-5 h-5 text-green-600 dark:text-green-400" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+                  <path d="M12 0C5.373 0 0 5.373 0 12c0 2.107.547 4.083 1.502 5.8L0 24l6.395-1.68A11.953 11.953 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.012-1.374l-.36-.214-3.73.978.997-3.647-.234-.373A9.818 9.818 0 1112 21.818z"/>
+                </svg>
+              </button>
+              <button title="Compartir por Telegram"
+                class="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40 transition-colors"
+                @click="compartirTelegram">
+                <svg class="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.19 13.447l-2.96-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.958.112z"/>
+                </svg>
+              </button>
+              <button title="Copiar mensaje"
+                class="p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors"
+                @click="copiarMensaje">
+                <svg class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
 
+        <!-- Aviso foto después requerida para cerrar -->
+        <div v-if="showCerrarServicio && !tienesFotosDespues"
+          class="flex items-start gap-2 mt-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg px-3 py-2">
+          <svg class="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+          </svg>
+          <p class="text-xs text-amber-700 dark:text-amber-400">
+            Sube al menos una foto <strong>Después</strong> del servicio para poder cerrarlo.
+          </p>
+        </div>
+
         <!-- State actions -->
-        <div v-if="allowedTransitions.length > 0 || canCerrarServicio || (canReprogramar && ['pendiente','confirmada'].includes(cita.estado))"
+        <div v-if="allowedTransitions.length > 0 || showCerrarServicio || (canReprogramar && ['pendiente','confirmada'].includes(cita.estado))"
           class="flex gap-2 flex-wrap mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
           <BaseButton
             v-for="next in allowedTransitions" :key="next"
@@ -346,8 +458,8 @@ const totalPagado = computed(() => detalleStore.pagos.reduce((s, p) => s + Numbe
           </BaseButton>
           <BaseButton v-if="showCerrarServicio"
             size="sm" variant="primary"
-            :disabled="citasStore.loading || !checklistCompleto"
-            :title="!checklistCompleto ? 'Completa todos los ítems del checklist primero' : ''"
+            :disabled="citasStore.loading || !canCerrarServicio"
+            :title="cerrarTooltip"
             @click="onCerrarServicio">
             Cerrar servicio
           </BaseButton>
@@ -376,6 +488,91 @@ const totalPagado = computed(() => detalleStore.pagos.reduce((s, p) => s + Numbe
           <BaseButton size="sm" :disabled="!groomerSelId || asignandoGroomer" :loading="asignandoGroomer" @click="asignarGroomer">
             Asignar
           </BaseButton>
+        </div>
+      </BaseCard>
+
+      <!-- ── Pagos ── -->
+      <BaseCard v-if="canManagePagos">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="font-semibold text-gray-900 dark:text-white">Pagos</h2>
+          <BaseButton size="sm" variant="secondary"
+            @click="showPagoForm ? (showPagoForm = false) : openPagoForm()">
+            {{ showPagoForm ? 'Cancelar' : '+ Registrar pago' }}
+          </BaseButton>
+        </div>
+
+        <div v-if="showPagoForm" class="mb-4 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 space-y-3">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs text-gray-500 mb-1">Monto ($)</label>
+              <input v-model="pagoForm.monto" type="number" min="1" step="0.01" placeholder="0.00"
+                class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none"
+                @change="clearPromo" />
+            </div>
+            <div>
+              <label class="block text-xs text-gray-500 mb-1">Método</label>
+              <select v-model="pagoForm.metodo"
+                class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none">
+                <option value="efectivo">Efectivo</option>
+                <option value="qr">QR</option>
+                <option value="transferencia">Transferencia</option>
+              </select>
+            </div>
+            <div class="col-span-2">
+              <label class="block text-xs text-gray-500 mb-1">Referencia (opcional)</label>
+              <input v-model="pagoForm.referencia" type="text" placeholder="N° transferencia, comprobante…"
+                class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none" />
+            </div>
+            <!-- Promoción -->
+            <div class="col-span-2">
+              <label class="block text-xs text-gray-500 mb-1">Código de promoción (opcional)</label>
+              <div class="flex gap-2">
+                <input v-model="promoCodigo" type="text" maxlength="30" placeholder="Ej: VERANO2025"
+                  class="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none uppercase"
+                  @input="promoCodigo = promoCodigo.toUpperCase(); promoVerif = null; promoError = null" />
+                <BaseButton size="sm" variant="secondary"
+                  :disabled="!promoCodigo || !pagoForm.monto || promoLoading"
+                  @click="verificarPromo">
+                  {{ promoLoading ? '…' : 'Verificar' }}
+                </BaseButton>
+              </div>
+              <!-- Resultado verificación -->
+              <div v-if="promoVerif"
+                class="mt-2 p-2 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-sm">
+                <p class="font-semibold text-green-700 dark:text-green-400">{{ promoVerif.nombre }}</p>
+                <p class="text-green-600 dark:text-green-400">
+                  Descuento: -${{ Number(promoVerif.descuento).toLocaleString('es-CL') }} →
+                  Total: ${{ Number(promoVerif.montoFinal).toLocaleString('es-CL') }}
+                </p>
+              </div>
+              <p v-if="promoError" class="mt-1 text-xs text-red-500">{{ promoError }}</p>
+            </div>
+          </div>
+          <BaseButton size="sm" :disabled="!pagoForm.monto || detalleStore.loading" @click="submitPago">
+            {{ pagoForm.metodo === 'qr' ? 'Generar QR de pago' : 'Registrar pago' }}
+          </BaseButton>
+        </div>
+
+        <div v-if="detalleStore.pagos.length === 0 && !showPagoForm"
+          class="text-sm text-gray-400 italic">Sin pagos registrados.</div>
+        <div v-else class="space-y-2">
+          <div v-for="p in detalleStore.pagos" :key="p.id_pago"
+            class="flex items-center justify-between p-2 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+            <div>
+              <p class="font-semibold text-gray-900 dark:text-white text-sm">
+                ${{ Number(p.monto).toLocaleString('es-CL') }}
+                <span class="ml-2 text-xs font-normal text-gray-500 capitalize">{{ p.metodo }}</span>
+              </p>
+              <p v-if="p.referencia" class="text-xs text-gray-400">Ref: {{ p.referencia }}</p>
+            </div>
+            <button v-if="['admin','jefe'].includes(rol)"
+              class="text-red-500 hover:text-red-700 text-xs" @click="onDeletePago(p.id_pago)">
+              Eliminar
+            </button>
+          </div>
+          <p class="text-sm font-semibold text-gray-900 dark:text-white pt-2 border-t border-gray-100 dark:border-gray-700">
+            Total: ${{ totalPagado.toLocaleString('es-CL') }}
+          </p>
         </div>
       </BaseCard>
 
@@ -470,8 +667,20 @@ const totalPagado = computed(() => detalleStore.pagos.reduce((s, p) => s + Numbe
       </BaseCard>
 
       <!-- ── Checklist ── -->
-      <BaseCard>
+      <BaseCard v-if="['en_proceso', 'completada'].includes(cita.estado)">
         <h2 class="font-semibold text-gray-900 dark:text-white mb-3">Checklist de servicio</h2>
+        <!-- Aviso foto antes requerida -->
+        <div v-if="canToggleChecklist && cita.estado === 'en_proceso' && !tienesFotosAntes"
+          class="flex items-start gap-2 mb-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg px-3 py-2">
+          <svg class="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+          </svg>
+          <p class="text-xs text-amber-700 dark:text-amber-400">
+            Sube al menos una foto <strong>Antes</strong> del servicio para poder marcar el checklist.
+          </p>
+        </div>
+
         <div v-if="detalleStore.loading && detalleStore.checklist.length === 0"
           class="text-sm text-gray-400">Cargando…</div>
         <div v-else-if="detalleStore.checklist.length === 0" class="text-sm text-gray-400 italic">
@@ -482,8 +691,9 @@ const totalPagado = computed(() => detalleStore.pagos.reduce((s, p) => s + Numbe
             class="flex items-center gap-3">
             <input type="checkbox"
               :checked="item.completado"
-              :disabled="!canToggleChecklist"
-              class="w-4 h-4 rounded text-primary-600 focus:ring-primary-500 border-gray-300 dark:border-gray-600"
+              :disabled="!canToggleChecklist || (cita.estado === 'en_proceso' && !tienesFotosAntes)"
+              :title="cita.estado === 'en_proceso' && !tienesFotosAntes ? 'Sube una foto Antes primero' : ''"
+              class="w-4 h-4 rounded text-primary-600 focus:ring-primary-500 border-gray-300 dark:border-gray-600 disabled:opacity-40 disabled:cursor-not-allowed"
               @change="toggleItem(idCita, item.id_item, !item.completado)"
             />
             <span :class="['text-sm', item.completado ? 'line-through text-gray-400' : 'text-gray-700 dark:text-gray-300']">
@@ -620,93 +830,20 @@ const totalPagado = computed(() => detalleStore.pagos.reduce((s, p) => s + Numbe
         </div>
       </BaseCard>
 
-      <!-- ── Pagos ── -->
-      <BaseCard v-if="canManagePagos">
-        <div class="flex items-center justify-between mb-3">
-          <h2 class="font-semibold text-gray-900 dark:text-white">Pagos</h2>
-          <BaseButton size="sm" variant="secondary" @click="showPagoForm = !showPagoForm">
-            {{ showPagoForm ? 'Cancelar' : '+ Registrar pago' }}
-          </BaseButton>
-        </div>
-
-        <div v-if="showPagoForm" class="mb-4 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 space-y-3">
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block text-xs text-gray-500 mb-1">Monto ($)</label>
-              <input v-model="pagoForm.monto" type="number" min="1" step="0.01" placeholder="0.00"
-                class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none"
-                @change="clearPromo" />
-            </div>
-            <div>
-              <label class="block text-xs text-gray-500 mb-1">Método</label>
-              <select v-model="pagoForm.metodo"
-                class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none">
-                <option value="efectivo">Efectivo</option>
-                <option value="qr">QR</option>
-                <option value="transferencia">Transferencia</option>
-              </select>
-            </div>
-            <div class="col-span-2">
-              <label class="block text-xs text-gray-500 mb-1">Referencia (opcional)</label>
-              <input v-model="pagoForm.referencia" type="text" placeholder="N° transferencia, comprobante…"
-                class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none" />
-            </div>
-            <!-- Promoción -->
-            <div class="col-span-2">
-              <label class="block text-xs text-gray-500 mb-1">Código de promoción (opcional)</label>
-              <div class="flex gap-2">
-                <input v-model="promoCodigo" type="text" maxlength="30" placeholder="Ej: VERANO2025"
-                  class="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none uppercase"
-                  @input="promoCodigo = promoCodigo.toUpperCase(); promoVerif = null; promoError = null" />
-                <BaseButton size="sm" variant="secondary"
-                  :disabled="!promoCodigo || !pagoForm.monto || promoLoading"
-                  @click="verificarPromo">
-                  {{ promoLoading ? '…' : 'Verificar' }}
-                </BaseButton>
-              </div>
-              <!-- Resultado verificación -->
-              <div v-if="promoVerif"
-                class="mt-2 p-2 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-sm">
-                <p class="font-semibold text-green-700 dark:text-green-400">{{ promoVerif.nombre }}</p>
-                <p class="text-green-600 dark:text-green-400">
-                  Descuento: -${{ Number(promoVerif.descuento).toLocaleString('es-CL') }} →
-                  Total: ${{ Number(promoVerif.montoFinal).toLocaleString('es-CL') }}
-                </p>
-              </div>
-              <p v-if="promoError" class="mt-1 text-xs text-red-500">{{ promoError }}</p>
-            </div>
-          </div>
-          <BaseButton size="sm" :disabled="!pagoForm.monto || detalleStore.loading" @click="submitPago">
-            Registrar pago
-          </BaseButton>
-        </div>
-
-        <div v-if="detalleStore.pagos.length === 0 && !showPagoForm"
-          class="text-sm text-gray-400 italic">Sin pagos registrados.</div>
-        <div v-else class="space-y-2">
-          <div v-for="p in detalleStore.pagos" :key="p.id_pago"
-            class="flex items-center justify-between p-2 rounded-lg bg-gray-50 dark:bg-gray-800/50">
-            <div>
-              <p class="font-semibold text-gray-900 dark:text-white text-sm">
-                ${{ Number(p.monto).toLocaleString('es-CL') }}
-                <span class="ml-2 text-xs font-normal text-gray-500 capitalize">{{ p.metodo }}</span>
-              </p>
-              <p v-if="p.referencia" class="text-xs text-gray-400">Ref: {{ p.referencia }}</p>
-            </div>
-            <button v-if="['admin','jefe'].includes(rol)"
-              class="text-red-500 hover:text-red-700 text-xs" @click="onDeletePago(p.id_pago)">
-              Eliminar
-            </button>
-          </div>
-          <p class="text-sm font-semibold text-gray-900 dark:text-white pt-2 border-t border-gray-100 dark:border-gray-700">
-            Total: ${{ totalPagado.toLocaleString('es-CL') }}
-          </p>
-        </div>
-      </BaseCard>
     </template>
 
+    <!-- ── QR Payment Modal ── -->
+    <QrPaymentModal
+      :open="showQrModal"
+      :monto="Number(pagoForm.monto)"
+      :servicio="cita?.nombre_servicio"
+      :referencia="pagoForm.referencia || undefined"
+      @confirm="onQrConfirm"
+      @cancel="showQrModal = false"
+    />
+
     <!-- ── Reprogramar Modal ── -->
-    <BaseModal :show="showReprogramar" title="Reprogramar cita" @close="showReprogramar = false">
+    <BaseModal :open="showReprogramar" title="Reprogramar cita" @close="showReprogramar = false">
       <div class="space-y-4">
         <div>
           <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">Nueva fecha</label>

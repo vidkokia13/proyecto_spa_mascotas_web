@@ -9,6 +9,22 @@ import BaseModal  from '@/presentation/components/ui/BaseModal.vue'
 import type { Disponibilidad } from '@/shared/types/agenda.types'
 import type { Employee }       from '@/shared/types/employee.types'
 
+// ── Editar capacidad simultánea ───────────────────────────────────────────────
+const editandoCapacidad = ref(false)
+const capacidadForm     = ref(1)
+
+async function guardarCapacidad() {
+  if (!selected.value) return
+  try {
+    await empStore.update(selected.value.id_usuario, { capacidadSimultanea: capacidadForm.value })
+    selected.value = { ...selected.value, capacidad_simultanea: capacidadForm.value }
+    editandoCapacidad.value = false
+    uiStore.showToast('Capacidad actualizada', 'success')
+  } catch {
+    uiStore.showToast('Error al actualizar capacidad', 'error')
+  }
+}
+
 const empStore    = useEmployeesStore()
 const agendaStore = useAgendaStore()
 const uiStore     = useUiStore()
@@ -29,6 +45,8 @@ const loadingDisp   = ref(false)
 async function selectGroomer(g: Employee) {
   if (selected.value?.id_trabajador === g.id_trabajador) return
   selected.value   = g
+  capacidadForm.value = g.capacidad_simultanea ?? 1
+  editandoCapacidad.value = false
   loadingDisp.value = true
   try {
     const res        = await import('@/data/datasources/AgendaDatasource').then(m =>
@@ -136,6 +154,7 @@ onMounted(() => empStore.fetchAll())
             <div class="min-w-0">
               <p class="font-medium text-sm truncate">{{ g.nombre }}</p>
               <p class="text-xs text-gray-400 truncate">{{ g.especialidad ?? 'Sin especialidad' }}</p>
+              <p class="text-xs text-gray-400">Cap. simultánea: <strong class="text-primary-600 dark:text-primary-400">{{ g.capacidad_simultanea }}</strong></p>
             </div>
           </div>
         </button>
@@ -157,6 +176,31 @@ onMounted(() => empStore.fetchAll())
               <BaseButton size="sm" :disabled="disponibilidad.length >= 7" @click="openAdd">
                 + Agregar día
               </BaseButton>
+            </div>
+
+            <!-- Capacidad simultánea -->
+            <div class="flex items-center gap-3 mb-4 pb-4 border-b border-gray-100 dark:border-gray-700">
+              <div class="flex-1">
+                <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Capacidad simultánea</p>
+                <p class="text-xs text-gray-400">Máximo de citas que puede atender al mismo tiempo</p>
+              </div>
+              <template v-if="!editandoCapacidad">
+                <span class="text-lg font-bold text-primary-600 dark:text-primary-400 min-w-8 text-center">
+                  {{ selected.capacidad_simultanea }}
+                </span>
+                <BaseButton size="sm" variant="secondary" @click="editandoCapacidad = true; capacidadForm = selected.capacidad_simultanea">
+                  Editar
+                </BaseButton>
+              </template>
+              <template v-else>
+                <input
+                  v-model.number="capacidadForm"
+                  type="number" min="1" max="20"
+                  class="w-16 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-2 py-1.5 text-sm text-center focus:ring-2 focus:ring-primary-500 focus:outline-none"
+                />
+                <BaseButton size="sm" @click="guardarCapacidad" :disabled="empStore.loading">Guardar</BaseButton>
+                <BaseButton size="sm" variant="secondary" @click="editandoCapacidad = false">Cancelar</BaseButton>
+              </template>
             </div>
 
             <div v-if="loadingDisp" class="text-center py-8 text-gray-400 text-sm">Cargando disponibilidad…</div>

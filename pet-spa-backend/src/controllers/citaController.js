@@ -36,9 +36,11 @@ async function misCitas(req, res) {
 
 async function listRango(req, res) {
   const { fechaInicio, fechaFin, idTrabajador, estado } = req.query;
+  const fin = new Date(fechaFin);
+  fin.setHours(23, 59, 59, 999);
   const citas = await citaService.getCitasRango({
     fechaInicio: new Date(fechaInicio),
-    fechaFin:    new Date(fechaFin),
+    fechaFin:    fin,
     idTrabajador: idTrabajador || null,
     estado:       estado || null,
   });

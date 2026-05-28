@@ -12,9 +12,12 @@ const router = Router();
 router.use(authRequired);
 
 // Catálogo
-router.get('/',     asyncHandler(insumoController.list));
-router.post('/',    requireRole('admin','jefe'), validate(insumoValidators.create, 'body'),  asyncHandler(insumoController.crear));
-router.patch('/:id',requireRole('admin','jefe'), validate(insumoValidators.update, 'body'),  asyncHandler(insumoController.actualizar));
+router.get('/',          asyncHandler(insumoController.list));
+router.get('/alertas',   asyncHandler(insumoController.alertas));
+router.get('/log',        requireRole('admin','jefe'), asyncHandler(insumoController.log));
+router.get('/prediccion', requireRole('admin','jefe'), asyncHandler(insumoController.prediccion));
+router.post('/',         requireRole('admin','jefe'), validate(insumoValidators.create, 'body'),  asyncHandler(insumoController.crear));
+router.patch('/:id',     requireRole('admin','jefe'), validate(insumoValidators.update, 'body'),  asyncHandler(insumoController.actualizar));
 
 // Por cita
 router.get('/cita/:idCita',  asyncHandler(insumoController.listByCita));

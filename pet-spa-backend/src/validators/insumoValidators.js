@@ -3,16 +3,18 @@
 const Joi = require('joi');
 
 const create = Joi.object({
-  nombre: Joi.string().min(2).max(100).required(),
-  unidad: Joi.string().max(30).default('unidad'),
-  stock:  Joi.number().min(0).default(0),
+  nombre:      Joi.string().min(2).max(100).required(),
+  unidad:      Joi.string().max(30).default('unidad'),
+  stock:       Joi.number().min(0).default(0),
+  stockMinimo: Joi.number().integer().min(0).default(5),
 });
 
 const update = Joi.object({
-  nombre: Joi.string().min(2).max(100).optional(),
-  unidad: Joi.string().max(30).optional(),
-  stock:  Joi.number().min(0).optional(),
-  activo: Joi.boolean().optional(),
+  nombre:      Joi.string().min(2).max(100).optional(),
+  unidad:      Joi.string().max(30).optional(),
+  stock:       Joi.number().min(0).optional(),
+  stockMinimo: Joi.number().integer().min(0).optional(),
+  activo:      Joi.boolean().optional(),
 }).min(1);
 
 const registrarInsumos = Joi.object({

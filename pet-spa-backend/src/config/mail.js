@@ -14,8 +14,6 @@ const logger = require('./logger');
 const transporter = nodemailer.createTransport({
   host: env.mail.host,
   port: env.mail.port,
-  // Mailtrap sandbox no necesita TLS estricto; si tu proveedor en prod usa
-  // 465, poné secure: true.
   secure: false,
   auth: {
     user: env.mail.user,
@@ -23,7 +21,6 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// Verificación opcional al arranque (no bloquea el servidor)
 transporter.verify()
   .then(() => logger.info('📧 Servidor SMTP listo (Mailtrap)'))
   .catch((err) => logger.warn('⚠️  No se pudo verificar SMTP', { error: err.message }));

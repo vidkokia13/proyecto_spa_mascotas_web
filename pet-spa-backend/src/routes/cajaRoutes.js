@@ -10,8 +10,9 @@ const router = Router();
 router.use(authRequired);
 router.use(requireRole('admin','jefe','recepcion'));
 
-router.get('/resumen',   asyncHandler(cajaController.resumen));
-router.get('/historial', asyncHandler(cajaController.historial));
-router.post('/cerrar',   requireRole('admin','jefe'), asyncHandler(cajaController.cerrar));
+router.get('/resumen',    asyncHandler(cajaController.resumen));
+router.get('/historial',  asyncHandler(cajaController.historial));
+router.post('/cerrar',    requireRole('admin','jefe'), asyncHandler(cajaController.cerrar));
+router.post('/reabrir',   requireRole('jefe'),         asyncHandler(cajaController.reabrir));
 
 module.exports = router;

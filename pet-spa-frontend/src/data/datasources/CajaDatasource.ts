@@ -17,6 +17,11 @@ export const cajaDatasource = {
     return data
   },
 
+  async reabrir(payload: { fecha: string }): Promise<{ message: string }> {
+    const { data } = await http.post<{ message: string }>(API_ENDPOINTS.CAJA.REABRIR, payload)
+    return data
+  },
+
   async historial(params?: { limit?: number; offset?: number }): Promise<HistorialCierresResponse> {
     const { data } = await http.get<HistorialCierresResponse>(API_ENDPOINTS.CAJA.HISTORIAL, { params })
     return data

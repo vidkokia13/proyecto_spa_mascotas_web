@@ -139,9 +139,18 @@ async function findActiveGroomers(client = db) {
   return rows;
 }
 
+async function findById(idTrabajador, client = db) {
+  const { rows } = await client.query(
+    'SELECT * FROM trabajadores WHERE id_trabajador = $1',
+    [idTrabajador],
+  );
+  return rows[0] || null;
+}
+
 module.exports = {
   create,
   findByUserId,
+  findById,
   findDetailedByUserId,
   listAll,
   findActiveGroomers,

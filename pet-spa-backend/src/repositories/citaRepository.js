@@ -65,7 +65,7 @@ async function findByCliente(idUsuario, { limit = 20, offset = 0 } = {}, client 
 
 async function findInRange(fechaInicio, fechaFin, { idTrabajador = null, estado = null } = {}, client = db) {
   const params = [fechaInicio, fechaFin];
-  const conditions = ['c.fecha_hora_inicio >= $1', 'c.fecha_hora_inicio < $2'];
+  const conditions = ['c.fecha_hora_inicio >= $1', 'c.fecha_hora_inicio <= $2'];
   if (idTrabajador) { params.push(idTrabajador); conditions.push(`c.id_trabajador = $${params.length}`); }
   if (estado)       { params.push(estado);       conditions.push(`c.estado = $${params.length}`);       }
   const { rows } = await client.query(
@@ -82,7 +82,7 @@ async function countOverlaps(idTrabajador, fechaHoraInicio, fechaHoraFin, exclud
   const { rows } = await client.query(
     `SELECT COUNT(*) AS total FROM citas
      WHERE id_trabajador = $1
-       AND estado <> 'cancelada'
+       AND estado IN ('pendiente', 'confirmada', 'en_proceso')
        AND fecha_hora_inicio < $3
        AND fecha_hora_fin    > $2
        ${extra}`,
@@ -97,9 +97,25 @@ async function countSpaOverlaps(fechaHoraInicio, fechaHoraFin, excludeId = null,
   if (excludeId) { params.push(excludeId); extra = ` AND id_cita <> $${params.length}`; }
   const { rows } = await client.query(
     `SELECT COUNT(*) AS total FROM citas
-     WHERE estado <> 'cancelada'
+     WHERE estado IN ('pendiente', 'confirmada', 'en_proceso')
        AND fecha_hora_inicio < $2
        AND fecha_hora_fin    > $1
+       ${extra}`,
+    params,
+  );
+  return parseInt(rows[0].total, 10);
+}
+
+async function countMascotaOverlaps(idMascota, fechaHoraInicio, fechaHoraFin, excludeId = null, client = db) {
+  const params = [idMascota, fechaHoraInicio, fechaHoraFin];
+  let extra = '';
+  if (excludeId) { params.push(excludeId); extra = ` AND id_cita <> $${params.length}`; }
+  const { rows } = await client.query(
+    `SELECT COUNT(*) AS total FROM citas
+     WHERE id_mascota = $1
+       AND estado IN ('pendiente', 'confirmada', 'en_proceso')
+       AND fecha_hora_inicio < $3
+       AND fecha_hora_fin    > $2
        ${extra}`,
     params,
   );
@@ -152,4 +168,4 @@ async function findCalendario(fechaInicio, fechaFin, client = db) {
   return rows;
 }
 
-module.exports = { create, findById, findByCliente, findInRange, countOverlaps, countSpaOverlaps, updateEstado, update, findCalendario };
+module.exports = { create, findById, findByCliente, findInRange, countOverlaps, countSpaOverlaps, countMascotaOverlaps, updateEstado, update, findCalendario };

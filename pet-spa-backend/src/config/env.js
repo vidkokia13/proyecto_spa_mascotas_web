@@ -1,17 +1,9 @@
-/**
- * config/env.js
- * --------------
- * Carga las variables del archivo .env y las valida con Joi.
- * Centraliza toda la configuración para que el resto del código
- * no use process.env directamente (más fácil de testear y mantener).
- */
 'use strict';
 
 const path = require('path');
 const dotenv = require('dotenv');
 const Joi = require('joi');
 
-// Cargar el .env desde la raíz del proyecto
 dotenv.config({ path: path.resolve(__dirname, '..', '..', '.env') });
 
 const schema = Joi.object({
@@ -55,8 +47,6 @@ const schema = Joi.object({
 const { value: env, error } = schema.validate(process.env, { abortEarly: false });
 
 if (error) {
-  // No usamos el logger aquí porque aún no está inicializado
-  // eslint-disable-next-line no-console
   console.error('❌ Error en variables de entorno:\n', error.message);
   process.exit(1);
 }

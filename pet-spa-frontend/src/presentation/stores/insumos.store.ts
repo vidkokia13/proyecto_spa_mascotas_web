@@ -2,12 +2,15 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { insumoDatasource }    from '@/data/datasources/InsumoDatasource'
 import { extractErrorMessage } from '@/core/errors/AppError'
-import type { Insumo, CreateInsumoPayload, UpdateInsumoPayload } from '@/shared/types/agenda.types'
+import type { Insumo, CreateInsumoPayload, UpdateInsumoPayload, InsumoLog, InsumoPrediccion } from '@/shared/types/agenda.types'
 
 export const useInsumosStore = defineStore('insumos', () => {
-  const insumos = ref<Insumo[]>([])
-  const loading = ref(false)
-  const error   = ref<string | null>(null)
+  const insumos       = ref<Insumo[]>([])
+  const alertas       = ref<Insumo[]>([])
+  const logRegistros  = ref<InsumoLog[]>([])
+  const predicciones  = ref<InsumoPrediccion[]>([])
+  const loading       = ref(false)
+  const error         = ref<string | null>(null)
 
   async function fetchAll(): Promise<void> {
     loading.value = true; error.value = null
@@ -36,7 +39,22 @@ export const useInsumosStore = defineStore('insumos', () => {
     finally { loading.value = false }
   }
 
+  async function fetchAlertas(): Promise<void> {
+    try { alertas.value = (await insumoDatasource.alertas()).insumos }
+    catch { /* no-op: alertas are informational */ }
+  }
+
+  async function fetchLog(params?: { idTrabajador?: string; fecha?: string }): Promise<void> {
+    try { logRegistros.value = (await insumoDatasource.log(params)).registros }
+    catch { /* no-op */ }
+  }
+
+  async function fetchPrediccion(): Promise<void> {
+    try { predicciones.value = (await insumoDatasource.prediccion()).alertas }
+    catch { /* no-op */ }
+  }
+
   function clearError(): void { error.value = null }
 
-  return { insumos, loading, error, fetchAll, create, update, clearError }
+  return { insumos, alertas, logRegistros, predicciones, loading, error, fetchAll, fetchAlertas, fetchLog, fetchPrediccion, create, update, clearError }
 })

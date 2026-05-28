@@ -4,8 +4,9 @@ const horarioRepo        = require('../repositories/horarioRepository');
 const bloqueoRepo        = require('../repositories/bloqueoRepository');
 const disponibilidadRepo = require('../repositories/disponibilidadRepository');
 const citaRepo           = require('../repositories/citaRepository');
+const workerRepo         = require('../repositories/workerRepository');
 
-const SLOT_INTERVAL_MIN = 15;
+const SLOT_INTERVAL_MIN = 30;
 
 function calcularDuracion(duracionBase, tamano, temperamento, tiempoExtraMin = 0) {
   const factores = { pequeno: 1.0, mediano: 1.1, grande: 1.15, gigante: 1.3 };
@@ -47,10 +48,15 @@ async function getSlotsDisponibles({ fecha, servicio, mascota, idTrabajador = nu
   const finDia     = new Date(`${fecha}T23:59:59`);
   const bloqueosSpa = await bloqueoRepo.findInRange(inicioDia, finDia, null);
 
-  // Groomer day availability (if specified)
+  // Groomer day availability + capacity (if specified)
   let groomerDisp = [];
+  let groomerCapacidad = 1;
   if (idTrabajador) {
-    groomerDisp = await disponibilidadRepo.findByTrabajador(idTrabajador);
+    [groomerDisp] = await Promise.all([
+      disponibilidadRepo.findByTrabajador(idTrabajador),
+    ]);
+    const groomer = await workerRepo.findById(idTrabajador);
+    groomerCapacidad = groomer?.capacidad_simultanea ?? 1;
   }
 
   const slots = [];
@@ -72,22 +78,28 @@ async function getSlotsDisponibles({ fecha, servicio, mascota, idTrabajador = nu
     const ocupadasSpa = await citaRepo.countSpaOverlaps(slotInicio, slotFin);
     if (ocupadasSpa >= horario.capacidad_max) continue;
 
+    // Pet already has an appointment in this window
+    const mascotaOcupada = await citaRepo.countMascotaOverlaps(mascota.id_mascota, slotInicio, slotFin);
+    if (mascotaOcupada > 0) continue;
+
     if (idTrabajador) {
-      // Groomer must cover the full slot on this weekday
-      const cubre = groomerDisp.some(d =>
-        d.dia_semana === diaSemana &&
-        timeToMinutes(d.hora_inicio) <= slotMin &&
-        timeToMinutes(d.hora_fin)    >= slotFinMin,
-      );
-      if (!cubre) continue;
+      // Si el groomer tiene disponibilidad configurada, verificar que cubra el slot
+      if (groomerDisp.length > 0) {
+        const cubre = groomerDisp.some(d =>
+          d.dia_semana === diaSemana &&
+          timeToMinutes(d.hora_inicio) <= slotMin &&
+          timeToMinutes(d.hora_fin)    >= slotFinMin,
+        );
+        if (!cubre) continue;
+      }
 
       // Groomer-specific blockout
       const bloqueosGroomer = await bloqueoRepo.findInRange(slotInicio, slotFin, idTrabajador);
       if (bloqueosGroomer.length > 0) continue;
 
-      // Groomer overlap
+      // Groomer overlap vs. capacity
       const overlap = await citaRepo.countOverlaps(idTrabajador, slotInicio, slotFin);
-      if (overlap > 0) continue;
+      if (overlap >= groomerCapacidad) continue;
     }
 
     slots.push({ hora: slotHora, hora_fin: slotFinH, duracion_minutos: duracion });

@@ -20,9 +20,20 @@ export function useCaja() {
     }
   }
 
+  async function reabrirCaja(fecha: string): Promise<boolean> {
+    try {
+      await store.reabrir(fecha)
+      uiStore.showToast('Caja reabierta correctamente', 'success')
+      return true
+    } catch {
+      uiStore.showToast(store.error ?? 'Error al reabrir caja', 'error')
+      return false
+    }
+  }
+
   async function loadHistorial(params?: { limit?: number; offset?: number }): Promise<void> {
     await store.fetchHistorial(params)
   }
 
-  return { store, loadResumen, cerrarCaja, loadHistorial }
+  return { store, loadResumen, cerrarCaja, reabrirCaja, loadHistorial }
 }

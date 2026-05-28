@@ -30,9 +30,29 @@ async function registrar(req, res) {
   res.status(201).json({ insumos: result });
 }
 
+async function alertas(req, res) {
+  const insumos = await insumoService.getBajoStock();
+  res.json({ insumos, total: insumos.length });
+}
+
 async function actualizarRegistro(req, res) {
   const reg = await insumoService.updateCitaInsumo(req.params.id, req.body);
   res.json({ registro: reg });
 }
 
-module.exports = { list, crear, actualizar, listByCita, registrar, actualizarRegistro };
+async function log(req, res) {
+  const { idTrabajador, fecha } = req.query;
+  const registros = await insumoService.getLog({
+    idTrabajador: idTrabajador || null,
+    fecha:        fecha        || null,
+  });
+  res.json({ registros, total: registros.length });
+}
+
+async function prediccion(req, res) {
+  const items = await insumoService.getPrediccion();
+  const conAlertas = items.filter(i => i.alertas.length > 0);
+  res.json({ items, alertas: conAlertas, total_alertas: conAlertas.length });
+}
+
+module.exports = { list, crear, actualizar, alertas, listByCita, registrar, actualizarRegistro, log, prediccion };

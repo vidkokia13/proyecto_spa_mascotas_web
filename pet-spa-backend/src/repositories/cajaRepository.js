@@ -7,10 +7,10 @@ async function resumenDiario(fecha, client = db) {
   const { rows: totales } = await client.query(
     `SELECT
        metodo,
-       COUNT(*)::int        AS num_pagos,
+       COUNT(*)::int        AS cantidad,
        COALESCE(SUM(monto), 0)::numeric     AS total_bruto,
        COALESCE(SUM(descuento), 0)::numeric AS total_descuentos,
-       COALESCE(SUM(monto - descuento), 0)::numeric AS total_neto
+       COALESCE(SUM(monto - descuento), 0)::numeric AS total
      FROM pagos
      WHERE DATE(creado_en AT TIME ZONE 'America/Santiago') = $1
      GROUP BY metodo`,
@@ -99,4 +99,12 @@ async function listCierres({ limit = 30, offset = 0 } = {}, client = db) {
   return rows;
 }
 
-module.exports = { resumenDiario, findCierre, createCierre, listCierres };
+async function deleteCierre(fecha, client = db) {
+  const { rows } = await client.query(
+    'DELETE FROM cierres_caja WHERE fecha = $1 RETURNING *',
+    [fecha],
+  );
+  return rows[0] || null;
+}
+
+module.exports = { resumenDiario, findCierre, createCierre, listCierres, deleteCierre };

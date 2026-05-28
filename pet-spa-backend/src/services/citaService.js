@@ -11,6 +11,7 @@ const clientRepo          = require('../repositories/clientRepository');
 const workerRepo          = require('../repositories/workerRepository');
 const checklistRepo       = require('../repositories/checklistRepository');
 const fichaRepo           = require('../repositories/fichaRepository');
+const fotoRepo            = require('../repositories/fotoRepository');
 const { calcularDuracion } = require('./agendaService');
 const auditService        = require('./auditService');
 const notifService        = require('./notificationService');
@@ -21,7 +22,7 @@ function _timeToMin(hhmm) {
   return h * 60 + m;
 }
 
-async function _validarSlot({ fecha, diaSemana, slotMin, slotFinMin, idTrabajador, capacidadMax, client, excludeId = null }) {
+async function _validarSlot({ fecha, diaSemana, slotMin, slotFinMin, idTrabajador, idMascota = null, capacidadMax, capacidadGroomer = 1, client, excludeId = null }) {
   const pad = (n) => String(n).padStart(2, '0');
   const slotHora  = `${pad(Math.floor(slotMin  / 60))}:${pad(slotMin  % 60)}`;
   const slotFinH  = `${pad(Math.floor(slotFinMin / 60))}:${pad(slotFinMin % 60)}`;
@@ -34,20 +35,27 @@ async function _validarSlot({ fecha, diaSemana, slotMin, slotFinMin, idTrabajado
   const ocupadas = await citaRepo.countSpaOverlaps(slotInicio, slotFin, excludeId, client);
   if (ocupadas >= capacidadMax) throw new AppError('Capacidad máxima del spa alcanzada.', 409, 'CAPACITY_FULL');
 
+  if (idMascota) {
+    const mascotaOcupada = await citaRepo.countMascotaOverlaps(idMascota, slotInicio, slotFin, excludeId, client);
+    if (mascotaOcupada > 0) throw new AppError('Esta mascota ya tiene una cita en ese horario.', 409, 'MASCOTA_OVERLAP');
+  }
+
   if (idTrabajador) {
     const disp = await disponibilidadRepo.findByTrabajador(idTrabajador, client);
-    const cubre = disp.some(d =>
-      d.dia_semana === diaSemana &&
-      _timeToMin(d.hora_inicio) <= slotMin &&
-      _timeToMin(d.hora_fin)    >= slotFinMin,
-    );
-    if (!cubre) throw new AppError('El groomer no está disponible ese día/hora.', 409, 'GROOMER_UNAVAILABLE');
+    if (disp.length > 0) {
+      const cubre = disp.some(d =>
+        d.dia_semana === diaSemana &&
+        _timeToMin(d.hora_inicio) <= slotMin &&
+        _timeToMin(d.hora_fin)    >= slotFinMin,
+      );
+      if (!cubre) throw new AppError('El groomer no está disponible ese día/hora.', 409, 'GROOMER_UNAVAILABLE');
+    }
 
     const bloqueosG = await bloqueoRepo.findInRange(slotInicio, slotFin, idTrabajador, client);
     if (bloqueosG.length > 0) throw new AppError('El groomer tiene un bloqueo en ese horario.', 409, 'GROOMER_BLOCKED');
 
     const overlap = await citaRepo.countOverlaps(idTrabajador, slotInicio, slotFin, excludeId, client);
-    if (overlap > 0) throw new AppError('El groomer ya tiene una cita en ese horario.', 409, 'GROOMER_OVERLAP');
+    if (overlap >= capacidadGroomer) throw new AppError('El groomer ya alcanzó su capacidad máxima en ese horario.', 409, 'GROOMER_OVERLAP');
   }
 
   return { slotInicio, slotFin };
@@ -87,9 +95,12 @@ async function crearCita({ idUsuarioCliente, idMascota, idServicio, idTrabajador
       throw new AppError('La cita terminaría después del cierre del spa.', 409, 'SLOT_OVERFLOW');
     }
 
+    const groomer = idTrabajador ? await workerRepo.findById(idTrabajador, client) : null;
     const { slotInicio, slotFin } = await _validarSlot({
-      fecha, diaSemana, slotMin, slotFinMin, idTrabajador,
-      capacidadMax: horario.capacidad_max, client,
+      fecha, diaSemana, slotMin, slotFinMin, idTrabajador, idMascota,
+      capacidadMax: horario.capacidad_max,
+      capacidadGroomer: groomer?.capacidad_simultanea ?? 1,
+      client,
     });
 
     const cita = await citaRepo.create({
@@ -206,10 +217,13 @@ async function reprogramarCita(idCita, { fechaHoraInicio }, idUsuario, rol, ipAd
       throw new AppError('La cita terminaría después del cierre del spa.', 409, 'SLOT_OVERFLOW');
     }
 
+    const groomerR = cita.id_trabajador ? await workerRepo.findById(cita.id_trabajador, client) : null;
     const { slotInicio, slotFin } = await _validarSlot({
       fecha, diaSemana, slotMin, slotFinMin,
       idTrabajador: cita.id_trabajador,
+      idMascota: cita.id_mascota,
       capacidadMax: horario.capacidad_max,
+      capacidadGroomer: groomerR?.capacidad_simultanea ?? 1,
       client, excludeId: idCita,
     });
 
@@ -238,6 +252,42 @@ async function actualizarCita(idCita, fields, idUsuario, rol, ipAddress = null) 
   if (!['pendiente','confirmada'].includes(cita.estado)) {
     throw new AppError('Solo se pueden modificar citas pendientes o confirmadas.', 409, 'INVALID_STATE');
   }
+
+  // Si se está asignando o cambiando el groomer, validar disponibilidad y solapamientos
+  if (fields.id_trabajador) {
+    const inicio    = new Date(cita.fecha_hora_inicio);
+    const fin       = new Date(cita.fecha_hora_fin);
+    const diaSemana = inicio.getDay();
+    const slotMin    = inicio.getHours() * 60 + inicio.getMinutes();
+    const slotFinMin = fin.getHours()   * 60 + fin.getMinutes();
+
+    // Disponibilidad del groomer ese día y horario (solo si tiene turnos configurados)
+    const disp = await disponibilidadRepo.findByTrabajador(fields.id_trabajador);
+    if (disp.length > 0) {
+      const cubre = disp.some(d =>
+        d.dia_semana === diaSemana &&
+        _timeToMin(d.hora_inicio) <= slotMin &&
+        _timeToMin(d.hora_fin)    >= slotFinMin,
+      );
+      if (!cubre) {
+        throw new AppError('El groomer no tiene horario disponible para ese día y hora.', 409, 'GROOMER_UNAVAILABLE');
+      }
+    }
+
+    // Bloqueos del groomer en esa ventana
+    const bloqueosG = await bloqueoRepo.findInRange(inicio, fin, fields.id_trabajador);
+    if (bloqueosG.length > 0) {
+      throw new AppError('El groomer tiene un bloqueo en ese horario.', 409, 'GROOMER_BLOCKED');
+    }
+
+    // Solapamiento con otras citas del groomer (excluyendo esta misma)
+    const groomer = await workerRepo.findById(fields.id_trabajador);
+    const overlap = await citaRepo.countOverlaps(fields.id_trabajador, inicio, fin, idCita);
+    if (overlap >= (groomer?.capacidad_simultanea ?? 1)) {
+      throw new AppError('El groomer ya alcanzó su capacidad máxima en ese horario.', 409, 'GROOMER_OVERLAP');
+    }
+  }
+
   const updated = await citaRepo.update(idCita, fields);
   await auditService.log({ idUsuario, accion: 'CITA_ACTUALIZADA', detalle: `Cita ${idCita} actualizada`, ipAddress });
   return updated;
@@ -342,6 +392,16 @@ async function cerrarServicio(idCita, idUsuario, idTrabajador, rol, ipAddress = 
     throw new AppError(
       'Solo se puede cerrar una cita en proceso o confirmada.',
       409, 'INVALID_STATE',
+    );
+  }
+
+  // Validar que exista al menos una foto de tipo 'despues'
+  const fotos = await fotoRepo.findByCita(idCita);
+  const tienesDespues = fotos.some(f => f.tipo === 'despues');
+  if (!tienesDespues) {
+    throw new AppError(
+      'Debes subir al menos una foto del resultado final (después) antes de cerrar el servicio.',
+      409, 'FOTO_DESPUES_REQUERIDA',
     );
   }
 

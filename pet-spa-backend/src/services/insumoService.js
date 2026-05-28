@@ -9,8 +9,12 @@ async function getInsumos({ soloActivos = true } = {}) {
   return insumoRepo.findAll({ soloActivos });
 }
 
-async function createInsumo({ nombre, unidad, stock }) {
-  return insumoRepo.create({ nombre, unidad, stock });
+async function createInsumo({ nombre, unidad, stock, stockMinimo }) {
+  return insumoRepo.create({ nombre, unidad, stock, stockMinimo });
+}
+
+async function getBajoStock() {
+  return insumoRepo.findBajoStock();
 }
 
 async function updateInsumo(idInsumo, fields) {
@@ -68,4 +72,45 @@ async function updateCitaInsumo(idCitaInsumo, fields) {
   return reg;
 }
 
-module.exports = { getInsumos, createInsumo, updateInsumo, getCitaInsumos, registrarInsumos, updateCitaInsumo };
+async function getLog({ idTrabajador = null, fecha = null } = {}) {
+  return insumoRepo.findLog({ idTrabajador, fecha });
+}
+
+const SERVICIOS_CRITICOS  = 5;   // alert if stock covers fewer than this many services
+const DESPERDICIO_UMBRAL  = 0.30; // alert if waste > 30% of received
+
+async function getPrediccion() {
+  const rows = await insumoRepo.findPrediccion();
+  return rows.map(r => {
+    const stock         = parseFloat(r.stock);
+    const promedio      = parseFloat(r.promedio_uso);
+    const totalRecibido = parseFloat(r.total_recibido);
+    const desperdicio   = parseFloat(r.total_desperdicio);
+
+    const serviciosRestantes = promedio > 0 ? Math.floor(stock / promedio) : null;
+    const pctDesperdicio     = totalRecibido > 0 ? desperdicio / totalRecibido : 0;
+
+    const alertas = [];
+    if (r.num_servicios > 0 && serviciosRestantes !== null && serviciosRestantes < SERVICIOS_CRITICOS) {
+      alertas.push({ tipo: 'stock_critico', mensaje: `Stock estimado para solo ${serviciosRestantes} servicio(s) más.` });
+    }
+    if (r.num_servicios > 0 && pctDesperdicio > DESPERDICIO_UMBRAL) {
+      alertas.push({ tipo: 'consumo_elevado', mensaje: `Desperdicio alto: ${Math.round(pctDesperdicio * 100)}% de lo recibido.` });
+    }
+
+    return {
+      id_insumo:          r.id_insumo,
+      nombre:             r.nombre,
+      unidad:             r.unidad,
+      stock:              stock,
+      stock_minimo:       r.stock_minimo,
+      num_servicios:      r.num_servicios,
+      promedio_uso:       promedio,
+      servicios_restantes: serviciosRestantes,
+      pct_desperdicio:    Math.round(pctDesperdicio * 100),
+      alertas,
+    };
+  });
+}
+
+module.exports = { getInsumos, createInsumo, updateInsumo, getBajoStock, getCitaInsumos, registrarInsumos, updateCitaInsumo, getLog, getPrediccion };

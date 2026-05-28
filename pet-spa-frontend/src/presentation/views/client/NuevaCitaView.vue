@@ -101,7 +101,8 @@ function goStep3() {
 // ── Step 3 ────────────────────────────────────────────────────────────────────
 const resumenFecha = computed(() => {
   if (!selectedFecha.value || !selectedSlot.value) return ''
-  return `${fmtFecha(selectedFecha.value)} a las ${fmtTime(selectedSlot.value.hora)}`
+  const s = selectedSlot.value
+  return `${fmtFecha(selectedFecha.value)} · ${fmtTime(s.hora)} – ${fmtTime(s.hora_fin)}`
 })
 
 async function confirmar() {
@@ -253,19 +254,20 @@ onMounted(async () => {
           <p class="text-gray-500">No hay horarios disponibles para este día.</p>
           <p class="text-xs text-gray-400 mt-1">Prueba con otra fecha.</p>
         </div>
-        <div v-else class="grid grid-cols-3 sm:grid-cols-4 gap-2">
+        <div v-else class="grid grid-cols-2 sm:grid-cols-3 gap-2">
           <button
             v-for="slot in agendaStore.slots"
             :key="slot.hora"
             :class="[
-              'py-2.5 rounded-lg border-2 text-sm font-medium transition-all',
+              'py-2.5 px-3 rounded-lg border-2 text-sm font-medium transition-all text-left',
               selectedSlot?.hora === slot.hora
                 ? 'border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-400'
                 : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-primary-300',
             ]"
             @click="selectSlot(slot)"
           >
-            {{ fmtTime(slot.hora) }}
+            <span class="block font-semibold">{{ fmtTime(slot.hora) }} – {{ fmtTime(slot.hora_fin) }}</span>
+            <span class="block text-xs opacity-60">{{ slot.duracion_minutos }} min</span>
           </button>
         </div>
       </div>

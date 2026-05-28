@@ -9,8 +9,8 @@ import type { Promocion, CreatePromocionPayload, TipoPromocion } from '@/shared/
 
 const { store, loadAll, createPromocion, updatePromocion, eliminarPromocion } = usePromociones()
 
-const showModal = ref(false)
-const editId    = ref<string | null>(null)
+const showModal     = ref(false)
+const editId        = ref<string | null>(null)
 const filtroActivas = ref(false)
 
 const form = ref<CreatePromocionPayload & { activo?: boolean }>({
@@ -19,9 +19,21 @@ const form = ref<CreatePromocionPayload & { activo?: boolean }>({
 })
 
 const isEdit = computed(() => !!editId.value)
+const hoy    = new Date().toISOString().slice(0, 10)
 
-const hoy = new Date().toISOString().slice(0, 10)
+// ── Generador de código ───────────────────────────────────────────────────────
+const PREFIXES = ['PET', 'SPA', 'PROMO', 'DESC', 'VIP', 'STAR']
 
+function generateCodigo() {
+  const prefix  = PREFIXES[Math.floor(Math.random() * PREFIXES.length)]
+  const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ'
+  const digits  = '0123456789'
+  const rand    = Array.from({ length: 3 }, () => letters[Math.floor(Math.random() * letters.length)]).join('')
+  const nums    = Array.from({ length: 2 }, () => digits[Math.floor(Math.random() * digits.length)]).join('')
+  form.value.codigo = `${prefix}${rand}${nums}`
+}
+
+// ── CRUD ──────────────────────────────────────────────────────────────────────
 function openCreate() {
   editId.value = null
   form.value = { nombre: '', descripcion: null, tipo: 'porcentaje', valor: 0, codigo: null, fechaInicio: hoy, fechaFin: '' }
@@ -46,15 +58,12 @@ function openEdit(p: Promocion) {
 async function submit() {
   const payload = {
     ...form.value,
-    codigo: form.value.codigo?.trim() || null,
+    codigo:      form.value.codigo?.trim().toUpperCase() || null,
     descripcion: form.value.descripcion?.trim() || null,
   }
-  let ok: boolean
-  if (isEdit.value) {
-    ok = await updatePromocion(editId.value!, payload)
-  } else {
-    ok = await createPromocion(payload as CreatePromocionPayload)
-  }
+  const ok = isEdit.value
+    ? await updatePromocion(editId.value!, payload)
+    : await createPromocion(payload as CreatePromocionPayload)
   if (ok) showModal.value = false
 }
 
@@ -63,19 +72,19 @@ async function onEliminar(p: Promocion) {
   await eliminarPromocion(p.id_promocion)
 }
 
-function tipoLabel(tipo: TipoPromocion) {
-  return tipo === 'porcentaje' ? '%' : '$'
-}
-
+// ── Helpers display ───────────────────────────────────────────────────────────
 function valorDisplay(p: Promocion) {
   return p.tipo === 'porcentaje'
     ? `${p.valor}%`
-    : `$${Number(p.valor).toLocaleString('es-CL')}`
+    : `S/ ${Number(p.valor).toLocaleString('es-PE')}`
 }
 
 function isVigente(p: Promocion): boolean {
-  const now = hoy
-  return p.activo && p.fecha_inicio <= now && p.fecha_fin >= now
+  return p.activo && p.fecha_inicio <= hoy && p.fecha_fin >= hoy
+}
+
+async function onFiltroChange() {
+  await loadAll(filtroActivas.value)
 }
 
 onMounted(() => loadAll())
@@ -87,7 +96,7 @@ onMounted(() => loadAll())
       <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Promociones</h1>
       <div class="flex items-center gap-3">
         <label class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
-          <input type="checkbox" v-model="filtroActivas" class="rounded text-primary-600" @change="loadAll(!filtroActivas)" />
+          <input type="checkbox" v-model="filtroActivas" class="rounded text-primary-600" @change="onFiltroChange" />
           Solo activas
         </label>
         <BaseButton size="sm" @click="openCreate">+ Nueva promoción</BaseButton>
@@ -132,7 +141,7 @@ onMounted(() => loadAll())
     </div>
 
     <!-- Modal crear/editar -->
-    <BaseModal :show="showModal" :title="isEdit ? 'Editar promoción' : 'Nueva promoción'" @close="showModal = false">
+    <BaseModal :open="showModal" :title="isEdit ? 'Editar promoción' : 'Nueva promoción'" @close="showModal = false">
       <div class="space-y-4">
         <div>
           <label class="block text-xs text-gray-500 mb-1">Nombre *</label>
@@ -157,7 +166,7 @@ onMounted(() => loadAll())
           </div>
           <div>
             <label class="block text-xs text-gray-500 mb-1">
-              Valor * {{ form.tipo === 'porcentaje' ? '(máx 100)' : '(CLP)' }}
+              Valor * {{ form.tipo === 'porcentaje' ? '(máx 100%)' : '(S/)' }}
             </label>
             <input v-model.number="form.valor" type="number" min="0.01" step="0.01"
               :max="form.tipo === 'porcentaje' ? 100 : undefined"
@@ -167,9 +176,15 @@ onMounted(() => loadAll())
 
         <div>
           <label class="block text-xs text-gray-500 mb-1">Código de promoción (opcional)</label>
-          <input v-model="form.codigo" type="text" maxlength="30" placeholder="Ej: VERANO2025"
-            class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none uppercase"
-            @input="form.codigo = (form.codigo ?? '').toUpperCase()" />
+          <div class="flex gap-2">
+            <input v-model="form.codigo" type="text" maxlength="30" placeholder="Ej: VERANO2025"
+              class="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none font-mono uppercase"
+              @input="form.codigo = (form.codigo ?? '').toUpperCase()" />
+            <BaseButton size="sm" variant="secondary" type="button" @click="generateCodigo">
+              Generar
+            </BaseButton>
+          </div>
+          <p class="mt-1 text-xs text-gray-400">Déjalo vacío si la promoción no requiere código (se aplica automáticamente).</p>
         </div>
 
         <div class="grid grid-cols-2 gap-3">

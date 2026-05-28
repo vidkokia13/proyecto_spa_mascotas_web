@@ -28,6 +28,16 @@ export const useCajaStore = defineStore('caja', () => {
     finally { loading.value = false }
   }
 
+  async function reabrir(fecha: string): Promise<void> {
+    loading.value = true; error.value = null
+    try {
+      await cajaDatasource.reabrir({ fecha })
+      if (resumen.value) resumen.value = { ...resumen.value, ya_cerrada: false, cierre: null }
+      historial.value = historial.value.filter(c => c.fecha !== fecha)
+    } catch (e) { error.value = extractErrorMessage(e); throw e }
+    finally { loading.value = false }
+  }
+
   async function fetchHistorial(params?: { limit?: number; offset?: number }): Promise<void> {
     loading.value = true; error.value = null
     try { historial.value = (await cajaDatasource.historial(params)).cierres }
@@ -37,5 +47,5 @@ export const useCajaStore = defineStore('caja', () => {
 
   function clearError(): void { error.value = null }
 
-  return { resumen, historial, loading, error, fetchResumen, cerrar, fetchHistorial, clearError }
+  return { resumen, historial, loading, error, fetchResumen, cerrar, reabrir, fetchHistorial, clearError }
 })

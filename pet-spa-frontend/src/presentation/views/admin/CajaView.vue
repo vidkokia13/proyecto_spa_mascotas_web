@@ -1,11 +1,17 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useCaja } from '@/presentation/composables/useCaja'
+import { useAuthStore } from '@/presentation/stores/auth.store'
+import { useUiStore } from '@/presentation/stores/ui.store'
+import { pagoDatasource } from '@/data/datasources/PagoDatasource'
 import BaseCard   from '@/presentation/components/ui/BaseCard.vue'
 import BaseButton from '@/presentation/components/ui/BaseButton.vue'
 import BaseBadge  from '@/presentation/components/ui/BaseBadge.vue'
 
-const { store, loadResumen, cerrarCaja, loadHistorial } = useCaja()
+const { store, loadResumen, cerrarCaja, reabrirCaja, loadHistorial } = useCaja()
+const authStore = useAuthStore()
+const uiStore   = useUiStore()
+const rol = computed(() => authStore.userRole)
 
 const fechaSel   = ref(new Date().toISOString().slice(0, 10))
 const notas      = ref('')
@@ -39,6 +45,26 @@ async function onCerrar() {
     notas.value = ''
     await loadResumen(fechaSel.value)
   }
+}
+
+async function onReabrir() {
+  if (!confirm('¿Seguro que deseas reabrir la caja? Se eliminará el registro de cierre.')) return
+  const ok = await reabrirCaja(fechaSel.value)
+  if (ok) await loadResumen(fechaSel.value)
+}
+
+async function onDeletePago(idPago: string) {
+  if (!confirm('¿Eliminar este pago?')) return
+  try {
+    await pagoDatasource.remove(idPago)
+    await loadResumen(fechaSel.value)
+  } catch {
+    // error toast handled by axios interceptor
+  }
+}
+
+function onSolicitarDeletePago() {
+  uiStore.showToast('Para eliminar un pago, solicítalo a un jefe o administrador.', 'info')
 }
 
 async function onChangeFecha() {
@@ -143,6 +169,7 @@ onMounted(async () => {
                   <th class="pb-2 pr-3">Método</th>
                   <th class="pb-2 pr-3 text-right">Monto</th>
                   <th class="pb-2 text-right">Descuento</th>
+                  <th class="pb-2"></th>
                 </tr>
               </thead>
               <tbody>
@@ -164,6 +191,16 @@ onMounted(async () => {
                   <td class="py-2 text-right text-orange-500">
                     {{ Number(p.descuento) > 0 ? `-${formatMonto(p.descuento)}` : '—' }}
                   </td>
+                  <td class="py-2 pl-3 text-right">
+                    <button v-if="['admin','jefe'].includes(rol ?? '')"
+                      class="text-red-500 hover:text-red-700 text-xs" @click="onDeletePago(p.id_pago)">
+                      Eliminar
+                    </button>
+                    <button v-else-if="rol === 'recepcion'"
+                      class="text-yellow-500 hover:text-yellow-700 text-xs" @click="onSolicitarDeletePago()">
+                      Solicitar eliminación
+                    </button>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -182,12 +219,18 @@ onMounted(async () => {
                 La caja de este día aún no está cerrada.
               </p>
             </div>
-            <BaseButton v-if="!resumen.ya_cerrada" size="sm" @click="showCierre = true">
-              Cerrar caja
-            </BaseButton>
+            <div class="flex gap-2">
+              <BaseButton v-if="!resumen.ya_cerrada && ['admin','jefe'].includes(rol ?? '')" size="sm" @click="showCierre = true">
+                Cerrar caja
+              </BaseButton>
+              <BaseButton v-if="resumen.ya_cerrada && rol === 'jefe'" size="sm" variant="secondary"
+                :disabled="store.loading" @click="onReabrir">
+                Reabrir caja
+              </BaseButton>
+            </div>
           </div>
 
-          <div v-if="showCierre" class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 space-y-3">
+          <div v-if="showCierre && ['admin','jefe'].includes(rol ?? '')" class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 space-y-3">
             <div>
               <label class="block text-xs text-gray-500 mb-1">Notas (opcional)</label>
               <textarea v-model="notas" rows="2" placeholder="Observaciones del cierre…"

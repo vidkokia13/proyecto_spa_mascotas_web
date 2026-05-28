@@ -78,6 +78,9 @@ export const API_ENDPOINTS = {
   INSUMOS: {
     BASE:               '/insumos',
     BY_ID:              (id: string) => `/insumos/${id}`,
+    ALERTAS:            '/insumos/alertas',
+    LOG:                '/insumos/log',
+    PREDICCION:         '/insumos/prediccion',
     CITA_INSUMOS:       (idCita: string) => `/insumos/cita/${idCita}`,
     CITA_REGISTER:      '/insumos/cita',
     CITA_INSUMO_UPDATE: (id: string) => `/insumos/cita/${id}`,
@@ -90,6 +93,7 @@ export const API_ENDPOINTS = {
   CAJA: {
     RESUMEN:   '/caja/resumen',
     CERRAR:    '/caja/cerrar',
+    REABRIR:   '/caja/reabrir',
     HISTORIAL: '/caja/historial',
   },
   HEALTH: '/health',

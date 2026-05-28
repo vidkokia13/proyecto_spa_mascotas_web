@@ -3,11 +3,12 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCitas } from '@/presentation/composables/useCitas'
 import { useAuthStore } from '@/presentation/stores/auth.store'
+import { agendaDatasource } from '@/data/datasources/AgendaDatasource'
 import BaseCard from '@/presentation/components/ui/BaseCard.vue'
 import BaseButton from '@/presentation/components/ui/BaseButton.vue'
 import BaseBadge from '@/presentation/components/ui/BaseBadge.vue'
 import { ROUTE_NAMES } from '@/shared/constants/routes'
-import type { EstadoCita, Cita } from '@/shared/types/agenda.types'
+import type { EstadoCita, Cita, Groomer } from '@/shared/types/agenda.types'
 
 const authStore = useAuthStore()
 const router    = useRouter()
@@ -15,9 +16,11 @@ const { store, loadRango, cambiarEstado } = useCitas()
 
 const role = computed(() => authStore.userRole ?? '')
 
-const fechaInicio = ref(new Date().toISOString().slice(0, 10))
-const fechaFin    = ref(new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10))
-const filterEstado = ref<EstadoCita | ''>('')
+const fechaInicio      = ref(new Date().toISOString().slice(0, 10))
+const fechaFin         = ref(new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10))
+const filterEstado     = ref<EstadoCita | ''>('')
+const filterGroomerId  = ref<string>('')
+const groomers         = ref<Groomer[]>([])
 
 const ESTADO_LABEL: Record<string, string> = {
   pendiente: 'Pendiente', confirmada: 'Confirmada', en_proceso: 'En proceso',
@@ -30,6 +33,13 @@ const ESTADO_COLOR: Record<string, string> = {
   completada: 'bg-purple-100 text-purple-700',
   cancelada:  'bg-red-100 text-red-800',
 }
+const ESTADO_OPTIONS = [
+  { value: 'pendiente',  label: 'Pendiente' },
+  { value: 'confirmada', label: 'Confirmada' },
+  { value: 'en_proceso', label: 'En proceso' },
+  { value: 'completada', label: 'Cerrado' },
+  { value: 'cancelada',  label: 'Cancelada' },
+]
 
 const TRANSITIONS: Record<string, Record<string, EstadoCita[]>> = {
   trabajador: {
@@ -62,14 +72,25 @@ function formatFecha(iso: string): string {
 }
 
 async function load() {
-  await loadRango({
-    fechaInicio: fechaInicio.value,
-    fechaFin:    fechaFin.value,
-    estado:      filterEstado.value || undefined,
-  })
+  try {
+    await loadRango({
+      fechaInicio:  fechaInicio.value,
+      fechaFin:     fechaFin.value,
+      estado:       filterEstado.value    || undefined,
+      idTrabajador: filterGroomerId.value || undefined,
+    })
+  } catch {
+    // error already set in store
+  }
 }
 
-onMounted(load)
+onMounted(async () => {
+  const [, res] = await Promise.all([
+    load(),
+    agendaDatasource.getGroomers().catch(() => ({ groomers: [] })),
+  ])
+  groomers.value = res.groomers
+})
 </script>
 
 <template>
@@ -93,7 +114,15 @@ onMounted(load)
         <select v-model="filterEstado"
           class="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-1.5 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none">
           <option value="">Todos</option>
-          <option v-for="(label, val) in ESTADO_LABEL" :key="val" :value="val">{{ label }}</option>
+          <option v-for="opt in ESTADO_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+        </select>
+      </div>
+      <div v-if="groomers.length > 0" class="flex items-center gap-2">
+        <label class="text-sm text-gray-600 dark:text-gray-400">Groomer</label>
+        <select v-model="filterGroomerId"
+          class="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-1.5 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none">
+          <option value="">Todos</option>
+          <option v-for="g in groomers" :key="g.id_trabajador" :value="g.id_trabajador">{{ g.nombre }}</option>
         </select>
       </div>
       <BaseButton size="sm" @click="load">Buscar</BaseButton>
