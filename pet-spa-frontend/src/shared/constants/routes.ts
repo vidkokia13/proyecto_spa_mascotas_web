@@ -34,6 +34,11 @@ export const ROUTE_NAMES = {
   AGENDA_BLOQUEOS:    'agenda-bloqueos',
   AGENDA_CALENDARIO:  'agenda-calendario',
   AGENDA_GROOMERS:    'agenda-groomers',
+
+  ADMIN_PRODUCTOS:     'admin-productos',
+  CLIENT_TIENDA:       'client-tienda',
+  CLIENT_CARRITO:      'client-carrito',
+  RECEPCION_PEDIDOS:   'recepcion-pedidos',
 } as const
 
 export const ROUTE_PATHS = {
@@ -71,4 +76,9 @@ export const ROUTE_PATHS = {
   AGENDA_BLOQUEOS:    '/agenda/bloqueos',
   AGENDA_CALENDARIO:  '/agenda/calendario',
   AGENDA_GROOMERS:    '/agenda/groomers',
+
+  ADMIN_PRODUCTOS:    '/admin/productos',
+  CLIENT_TIENDA:      '/client/tienda',
+  CLIENT_CARRITO:     '/client/carrito',
+  RECEPCION_PEDIDOS:  '/recepcion/pedidos',
 } as const

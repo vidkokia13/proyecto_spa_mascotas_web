@@ -6,7 +6,8 @@ const validate            = require('../middlewares/validate');
 const asyncHandler        = require('../utils/asyncHandler');
 const mascotaController   = require('../controllers/mascotaController');
 const mascotaValidators   = require('../validators/mascotaValidators');
-const { uploadCarnet }    = require('../middlewares/upload');
+const { uploadCarnet, uploadMascota } = require('../middlewares/upload');
+const requireRole         = require('../middlewares/requireRole');
 
 const router = Router();
 router.use(authRequired);
@@ -19,5 +20,18 @@ router.delete('/:id',validate(mascotaValidators.idParam, 'params'), asyncHandler
 
 // Carnet de vacunas (imagen o PDF)
 router.post('/:id/carnet', validate(mascotaValidators.idParam, 'params'), uploadCarnet.single('carnet'), asyncHandler(mascotaController.subirCarnet));
+
+// Foto de perfil de mascota — solo admin/jefe
+router.post('/:id/foto',
+  requireRole(['admin', 'jefe']),
+  validate(mascotaValidators.idParam, 'params'),
+  uploadMascota.single('foto'),
+  asyncHandler(mascotaController.subirFoto),
+);
+router.delete('/:id/foto',
+  requireRole(['admin', 'jefe']),
+  validate(mascotaValidators.idParam, 'params'),
+  asyncHandler(mascotaController.eliminarFoto),
+);
 
 module.exports = router;

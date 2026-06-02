@@ -436,6 +436,70 @@ export interface VerificarPromocionResponse {
 export interface PromocionListResponse { promociones: Promocion[] }
 export interface PromocionResponse     { promocion:   Promocion }
 
+// ── Productos ─────────────────────────────────────────────────────────────────
+export type CategoriaProducto = 'alimento' | 'accesorio' | 'higiene' | 'juguete' | 'salud' | 'otro'
+
+export interface Producto {
+  id_producto:       string
+  nombre:            string
+  descripcion:       string | null
+  categoria:         CategoriaProducto
+  precio:            number
+  stock:             number
+  stock_minimo:      number
+  imagen_url:        string | null
+  imagen_public_id:  string | null
+  activo:            boolean
+  creado_en:         string
+}
+export interface CreateProductoPayload {
+  nombre:      string
+  descripcion?: string | null
+  categoria?:  CategoriaProducto
+  precio:      number
+  stock?:      number
+  stockMinimo?: number
+}
+export interface UpdateProductoPayload extends Partial<CreateProductoPayload> {
+  activo?: boolean
+}
+export interface ProductoListResponse { productos: Producto[] }
+export interface ProductoResponse     { producto:  Producto }
+
+// ── Pedidos ───────────────────────────────────────────────────────────────────
+export type EstadoPedido = 'borrador' | 'enviado' | 'completado' | 'cancelado'
+
+export interface PedidoItem {
+  id_item:        string
+  id_pedido:      string
+  id_producto:    string
+  nombre:         string
+  imagen_url:     string | null
+  cantidad:       number
+  precio_unitario: number
+  subtotal:       number
+}
+export interface Pedido {
+  id_pedido:      string
+  id_usuario:     string
+  estado:         EstadoPedido
+  notas:          string | null
+  total:          number
+  creado_en:      string
+  actualizado_en: string
+  cliente_nombre?: string
+}
+export interface CreatePedidoItem {
+  idProducto: string
+  cantidad:   number
+}
+export interface CreatePedidoPayload {
+  items: CreatePedidoItem[]
+  notas?: string | null
+}
+export interface PedidoListResponse { pedidos: Pedido[] }
+export interface PedidoDetalleResponse { pedido: Pedido; items: PedidoItem[] }
+
 // ── Caja ──────────────────────────────────────────────────────────────────────
 export interface ResumenMetodo {
   metodo:           string

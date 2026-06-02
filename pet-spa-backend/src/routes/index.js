@@ -17,6 +17,8 @@ const fotoRoutes      = require('./fotoRoutes');
 const insumoRoutes    = require('./insumoRoutes');
 const promocionRoutes = require('./promocionRoutes');
 const cajaRoutes      = require('./cajaRoutes');
+const productoRoutes  = require('./productoRoutes');
+const pedidoRoutes    = require('./pedidoRoutes');
 
 const router = Router();
 
@@ -37,5 +39,7 @@ router.use('/fotos',     fotoRoutes);
 router.use('/insumos',    insumoRoutes);
 router.use('/promociones', promocionRoutes);
 router.use('/caja',       cajaRoutes);
+router.use('/productos',  productoRoutes);
+router.use('/pedidos',    pedidoRoutes);
 
 module.exports = router;

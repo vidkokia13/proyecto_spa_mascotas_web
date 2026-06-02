@@ -51,9 +51,10 @@ const navGroups = computed<NavGroup[]>(() => {
       {
         label: 'Catálogo',
         items: [
-          { name: ROUTE_NAMES.ADMIN_SERVICIOS,   route: '/admin/servicios',   icon: 'tag',           label: 'Servicios'  },
-          { name: ROUTE_NAMES.ADMIN_INSUMOS,     route: '/admin/insumos',     icon: 'box',           label: 'Insumos'    },
-          { name: ROUTE_NAMES.ADMIN_PROMOCIONES, route: '/admin/promociones', icon: 'promo',         label: 'Promociones' },
+          { name: ROUTE_NAMES.ADMIN_SERVICIOS,   route: '/admin/servicios',   icon: 'tag',      label: 'Servicios'   },
+          { name: ROUTE_NAMES.ADMIN_INSUMOS,     route: '/admin/insumos',     icon: 'box',      label: 'Insumos'     },
+          { name: ROUTE_NAMES.ADMIN_PROMOCIONES, route: '/admin/promociones', icon: 'promo',    label: 'Promociones' },
+          { name: ROUTE_NAMES.ADMIN_PRODUCTOS,   route: '/admin/productos',   icon: 'shop',     label: 'Productos'   },
         ],
       },
       {
@@ -74,6 +75,7 @@ const navGroups = computed<NavGroup[]>(() => {
           { name: ROUTE_NAMES.AGENDA_CITAS,         route: '/agenda/citas',         icon: 'calendar',      label: 'Agenda'       },
           { name: ROUTE_NAMES.AGENDA_BLOQUEOS,      route: '/agenda/bloqueos',      icon: 'block',         label: 'Bloqueos'     },
           { name: ROUTE_NAMES.ADMIN_CAJA,           route: '/admin/caja',           icon: 'cash',          label: 'Caja'         },
+          { name: ROUTE_NAMES.RECEPCION_PEDIDOS,   route: '/recepcion/pedidos',    icon: 'shop',          label: 'Pedidos'      },
           { name: ROUTE_NAMES.CHANGE_PASSWORD,      route: '/change-password',      icon: 'lock',          label: 'Seguridad'    },
         ],
       },
@@ -100,6 +102,8 @@ const navGroups = computed<NavGroup[]>(() => {
         { name: ROUTE_NAMES.CLIENT_MASCOTAS,   route: '/client/mascotas',   icon: 'pet',      label: 'Mis mascotas' },
         { name: ROUTE_NAMES.CLIENT_CITAS,      route: '/client/citas',      icon: 'calendar', label: 'Mis citas'    },
         { name: ROUTE_NAMES.CLIENT_NUEVA_CITA, route: '/client/nueva-cita', icon: 'plus',     label: 'Nueva cita'   },
+        { name: ROUTE_NAMES.CLIENT_TIENDA,     route: '/client/tienda',     icon: 'shop',     label: 'Tienda'       },
+        { name: ROUTE_NAMES.CLIENT_CARRITO,   route: '/client/carrito',    icon: 'cart',     label: 'Carrito'      },
         { name: ROUTE_NAMES.CLIENT_PROFILE,    route: '/client/profile',    icon: 'user',     label: 'Mi perfil'    },
       ],
     },
@@ -211,6 +215,14 @@ const navGroups = computed<NavGroup[]>(() => {
             <!-- cash (caja) -->
             <svg v-else-if="item.icon === 'cash'" class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+            <!-- shop (tienda/productos) -->
+            <svg v-else-if="item.icon === 'shop'" class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+            </svg>
+            <!-- cart -->
+            <svg v-else-if="item.icon === 'cart'" class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
             </svg>
             <!-- user (fallback) -->
             <svg v-else class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">

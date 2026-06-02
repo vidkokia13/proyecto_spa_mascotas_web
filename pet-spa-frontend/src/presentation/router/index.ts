@@ -97,6 +97,13 @@ const router = createRouter({
           beforeEnter: roleGuard([ROLES.ADMIN, ROLES.JEFE]),
         },
         {
+          path: 'productos',
+          name: ROUTE_NAMES.ADMIN_PRODUCTOS,
+          component: () => import('@/presentation/views/admin/ProductosView.vue'),
+          meta: { requiresAuth: true, layout: 'dashboard' },
+          beforeEnter: roleGuard([ROLES.ADMIN, ROLES.JEFE]),
+        },
+        {
           path: 'caja',
           name: ROUTE_NAMES.ADMIN_CAJA,
           component: () => import('@/presentation/views/admin/CajaView.vue'),
@@ -171,6 +178,13 @@ const router = createRouter({
           meta: { requiresAuth: true, layout: 'dashboard' },
           beforeEnter: roleGuard([ROLES.RECEPCION]),
         },
+        {
+          path: 'pedidos',
+          name: ROUTE_NAMES.RECEPCION_PEDIDOS,
+          component: () => import('@/presentation/views/recepcion/PedidosView.vue'),
+          meta: { requiresAuth: true, layout: 'dashboard' },
+          beforeEnter: roleGuard([ROLES.RECEPCION, ROLES.ADMIN, ROLES.JEFE]),
+        },
       ],
     },
 
@@ -229,6 +243,20 @@ const router = createRouter({
           path: 'citas/:id/resumen',
           name: ROUTE_NAMES.CLIENT_RESUMEN_CITA,
           component: () => import('@/presentation/views/client/ResumenServicioView.vue'),
+          meta: { requiresAuth: true, layout: 'dashboard' },
+          beforeEnter: roleGuard([ROLES.CLIENTE]),
+        },
+        {
+          path: 'tienda',
+          name: ROUTE_NAMES.CLIENT_TIENDA,
+          component: () => import('@/presentation/views/client/TiendaView.vue'),
+          meta: { requiresAuth: true, layout: 'dashboard' },
+          beforeEnter: roleGuard([ROLES.CLIENTE]),
+        },
+        {
+          path: 'carrito',
+          name: ROUTE_NAMES.CLIENT_CARRITO,
+          component: () => import('@/presentation/views/client/CarritoView.vue'),
           meta: { requiresAuth: true, layout: 'dashboard' },
           beforeEnter: roleGuard([ROLES.CLIENTE]),
         },

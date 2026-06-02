@@ -96,5 +96,21 @@ export const API_ENDPOINTS = {
     REABRIR:   '/caja/reabrir',
     HISTORIAL: '/caja/historial',
   },
+  PRODUCTOS: {
+    BASE:    '/productos',
+    BY_ID:   (id: string) => `/productos/${id}`,
+    IMAGEN:  (id: string) => `/productos/${id}/imagen`,
+  },
+  PEDIDOS: {
+    BASE:        '/pedidos',
+    MIS_PEDIDOS: '/pedidos/mis-pedidos',
+    BY_ID:       (id: string) => `/pedidos/${id}`,
+    ESTADO:      (id: string) => `/pedidos/${id}/estado`,
+    WHATSAPP:    (id: string) => `/pedidos/${id}/whatsapp`,
+  },
+  MASCOTAS_FOTO: {
+    SUBIR:    (id: string) => `/mascotas/${id}/foto`,
+    ELIMINAR: (id: string) => `/mascotas/${id}/foto`,
+  },
   HEALTH: '/health',
 } as const

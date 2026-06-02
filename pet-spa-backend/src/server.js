@@ -43,11 +43,20 @@ const db = require('./config/db');
   process.on('SIGINT', () => shutdown('SIGINT'));
   process.on('SIGTERM', () => shutdown('SIGTERM'));
 
-  // Errores no atrapados — loguear y dejar que Node los maneje
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      logger.error(`❌ Puerto ${env.port} ya está en uso. Cierra el proceso anterior e intenta de nuevo.`);
+    } else {
+      logger.error('Error de servidor', { error: err.message });
+    }
+    process.exit(1);
+  });
+
   process.on('unhandledRejection', (reason) => {
     logger.error('UnhandledRejection', { reason: String(reason) });
   });
   process.on('uncaughtException', (err) => {
     logger.error('UncaughtException', { error: err.message, stack: err.stack });
+    process.exit(1);
   });
 })();
