@@ -3,15 +3,31 @@ import { ref, watch } from 'vue'
 import type { Pedido, PedidoItem, CreatePedidoItem, EstadoPedido } from '@/shared/types/agenda.types'
 import * as ds from '@/data/datasources/PedidoDatasource'
 
-const CARRITO_KEY = 'petspa_carrito'
+const CARRITO_KEY     = 'petspa_carrito'
+const CARRITO_VERSION = '2'  // incrementar si cambia la estructura
+const CARRITO_VER_KEY = 'petspa_carrito_v'
 
 type CarritoItem = CreatePedidoItem & { nombre: string; precio: number; imagen_url: string | null }
 
 function cargarDesdeStorage(): CarritoItem[] {
   try {
+    // Si la versión del carrito guardado no coincide, descartarlo
+    if (localStorage.getItem(CARRITO_VER_KEY) !== CARRITO_VERSION) {
+      localStorage.removeItem(CARRITO_KEY)
+      localStorage.setItem(CARRITO_VER_KEY, CARRITO_VERSION)
+      return []
+    }
     const raw = localStorage.getItem(CARRITO_KEY)
-    return raw ? JSON.parse(raw) : []
+    if (!raw) return []
+    const items = JSON.parse(raw) as any[]
+    // Garantizar tipos numéricos (pg retorna DECIMAL como string)
+    return items.map(i => ({
+      ...i,
+      cantidad: Number(i.cantidad),
+      precio:   Number(i.precio),
+    }))
   } catch {
+    localStorage.removeItem(CARRITO_KEY)
     return []
   }
 }
@@ -31,8 +47,16 @@ export const usePedidoStore = defineStore('pedido', () => {
 
   function agregarAlCarrito(item: { idProducto: string; nombre: string; precio: number; imagen_url: string | null }) {
     const existing = carrito.value.find(x => x.idProducto === item.idProducto)
-    if (existing) { existing.cantidad++ } else {
-      carrito.value.push({ idProducto: item.idProducto, cantidad: 1, nombre: item.nombre, precio: item.precio, imagen_url: item.imagen_url })
+    if (existing) {
+      existing.cantidad++
+    } else {
+      carrito.value.push({
+        idProducto: item.idProducto,
+        cantidad:   1,
+        nombre:     item.nombre,
+        precio:     Number(item.precio),  // pg retorna DECIMAL como string
+        imagen_url: item.imagen_url,
+      })
     }
   }
 
@@ -50,7 +74,7 @@ export const usePedidoStore = defineStore('pedido', () => {
     localStorage.removeItem(CARRITO_KEY)
   }
 
-  const totalCarrito = () => carrito.value.reduce((acc, i) => acc + i.precio * i.cantidad, 0)
+  const totalCarrito = () => carrito.value.reduce((acc, i) => acc + Number(i.precio) * Number(i.cantidad), 0)
 
   async function confirmarPedido(notas?: string) {
     loading.value = true

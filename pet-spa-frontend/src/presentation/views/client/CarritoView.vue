@@ -94,7 +94,7 @@ function volverTienda() {
 
           <div class="flex-1 min-w-0">
             <p class="font-medium text-gray-900 dark:text-white text-sm truncate">{{ item.nombre }}</p>
-            <p class="text-xs text-gray-500 dark:text-gray-400">Bs {{ item.precio.toFixed(2) }} c/u</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">Bs {{ Number(item.precio).toFixed(2) }} c/u</p>
           </div>
 
           <!-- Controles cantidad -->
@@ -111,7 +111,7 @@ function volverTienda() {
           </div>
 
           <span class="text-sm font-bold text-primary-600 dark:text-primary-400 w-20 text-right">
-            Bs {{ (item.precio * item.cantidad).toFixed(2) }}
+            Bs {{ (Number(item.precio) * Number(item.cantidad)).toFixed(2) }}
           </span>
 
           <button class="text-red-400 hover:text-red-600 ml-1 transition" @click="store.quitarDelCarrito(item.idProducto)">
