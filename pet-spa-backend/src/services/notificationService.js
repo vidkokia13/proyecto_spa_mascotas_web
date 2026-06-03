@@ -123,10 +123,69 @@ async function notificarCancelacion({ email, nombreCliente, nombreMascota, nombr
   });
 }
 
+async function notificarRecordatorio24h({ email, nombreCliente, nombreMascota, nombreServicio, fechaHoraInicio }) {
+  const fecha = new Date(fechaHoraInicio).toLocaleString('es-CL', { dateStyle: 'full', timeStyle: 'short' });
+  await sendMail({
+    to: email,
+    subject: '⏰ Recordatorio: tu cita es mañana — Pet Spa',
+    html: `
+      <h2>Hola ${nombreCliente},</h2>
+      <p>Te recordamos que <strong>mañana tienes una cita</strong> en Pet Spa.</p>
+      <ul>
+        <li><strong>Mascota:</strong> ${nombreMascota}</li>
+        <li><strong>Servicio:</strong> ${nombreServicio}</li>
+        <li><strong>Fecha y hora:</strong> ${fecha}</li>
+      </ul>
+      <p>Si necesitas cancelar o reprogramar, hazlo con anticipación a través de tu cuenta.</p>
+      <p>¡Te esperamos! 🐾</p>
+    `,
+  });
+}
+
+async function notificarRecordatorio2h({ email, nombreCliente, nombreMascota, nombreServicio, fechaHoraInicio }) {
+  const fecha = new Date(fechaHoraInicio).toLocaleString('es-CL', { dateStyle: 'full', timeStyle: 'short' });
+  await sendMail({
+    to: email,
+    subject: '⏰ Tu cita es en 2 horas — Pet Spa',
+    html: `
+      <h2>Hola ${nombreCliente},</h2>
+      <p>Tu cita en Pet Spa <strong>comienza en aproximadamente 2 horas</strong>.</p>
+      <ul>
+        <li><strong>Mascota:</strong> ${nombreMascota}</li>
+        <li><strong>Servicio:</strong> ${nombreServicio}</li>
+        <li><strong>Hora:</strong> ${fecha}</li>
+      </ul>
+      <p>Por favor llega unos minutos antes. ¡Nos vemos pronto! 🐾</p>
+    `,
+  });
+}
+
+async function notificarBajoStock(producto, admins) {
+  if (!admins || admins.length === 0) return;
+  const emails = admins.map((a) => a.email).join(', ');
+  await sendMail({
+    to: emails,
+    subject: `⚠️ Stock bajo: ${producto.nombre} — Pet Spa`,
+    html: `
+      <h2>Alerta de stock bajo</h2>
+      <p>El producto <strong>${producto.nombre}</strong> ha alcanzado el stock mínimo.</p>
+      <ul>
+        <li><strong>Stock actual:</strong> ${producto.stock} unidades</li>
+        <li><strong>Stock mínimo configurado:</strong> ${producto.stock_minimo} unidades</li>
+        <li><strong>Categoría:</strong> ${producto.categoria}</li>
+      </ul>
+      <p>Por favor realiza un nuevo pedido de reabastecimiento.</p>
+    `,
+  });
+}
+
 module.exports = {
   notificarCitaConfirmada,
   notificarCitaCancelada,
   notificarCitaCompletada,
   notificarCitaReprogramada,
   notificarCancelacion,
+  notificarRecordatorio24h,
+  notificarRecordatorio2h,
+  notificarBajoStock,
 };

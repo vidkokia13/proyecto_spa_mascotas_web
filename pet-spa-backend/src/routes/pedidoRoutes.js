@@ -11,7 +11,7 @@ const pedidoValidators   = require('../validators/pedidoValidators');
 const router = Router();
 router.use(authRequired);
 
-const soloInterno = requireRole(['admin', 'jefe', 'recepcion']);
+const soloInterno = requireRole('admin', 'jefe', 'recepcion');
 
 // Cliente: ver sus propios pedidos y crear uno nuevo
 router.get('/mis-pedidos',  asyncHandler(pedidoController.misPedidos));

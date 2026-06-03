@@ -479,23 +479,31 @@ export interface PedidoItem {
   precio_unitario: number
   subtotal:       number
 }
+export type MetodoPago = 'efectivo' | 'qr' | 'transferencia'
+
 export interface Pedido {
-  id_pedido:      string
-  id_usuario:     string
-  estado:         EstadoPedido
-  notas:          string | null
-  total:          number
-  creado_en:      string
-  actualizado_en: string
+  id_pedido:       string
+  id_usuario:      string
+  estado:          EstadoPedido
+  notas:           string | null
+  total:           number
+  metodo_pago?:    MetodoPago | null
+  referencia_pago?: string | null
+  creado_en:       string
+  actualizado_en:  string
   cliente_nombre?: string
+  cliente_email?:  string
 }
 export interface CreatePedidoItem {
   idProducto: string
   cantidad:   number
 }
 export interface CreatePedidoPayload {
-  items: CreatePedidoItem[]
-  notas?: string | null
+  items:                   CreatePedidoItem[]
+  notas?:                  string | null
+  metodoPago?:             MetodoPago | null
+  referenciaPago?:         string | null
+  completarInmediatamente?: boolean
 }
 export interface PedidoListResponse { pedidos: Pedido[] }
 export interface PedidoDetalleResponse { pedido: Pedido; items: PedidoItem[] }

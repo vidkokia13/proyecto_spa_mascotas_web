@@ -23,13 +23,13 @@ router.post('/:id/carnet', validate(mascotaValidators.idParam, 'params'), upload
 
 // Foto de perfil de mascota — solo admin/jefe
 router.post('/:id/foto',
-  requireRole(['admin', 'jefe']),
+  requireRole('admin', 'jefe'),
   validate(mascotaValidators.idParam, 'params'),
   uploadMascota.single('foto'),
   asyncHandler(mascotaController.subirFoto),
 );
 router.delete('/:id/foto',
-  requireRole(['admin', 'jefe']),
+  requireRole('admin', 'jefe'),
   validate(mascotaValidators.idParam, 'params'),
   asyncHandler(mascotaController.eliminarFoto),
 );

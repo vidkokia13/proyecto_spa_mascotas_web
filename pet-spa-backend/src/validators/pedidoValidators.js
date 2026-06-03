@@ -12,8 +12,11 @@ const itemSchema = Joi.object({
 });
 
 const create = Joi.object({
-  items: Joi.array().items(itemSchema).min(1).required(),
-  notas: Joi.string().max(500).allow('', null),
+  items:                   Joi.array().items(itemSchema).min(1).required(),
+  notas:                   Joi.string().max(500).allow('', null),
+  metodoPago:              Joi.string().valid('efectivo', 'qr', 'transferencia').allow(null),
+  referenciaPago:          Joi.string().max(100).allow('', null),
+  completarInmediatamente: Joi.boolean().default(false),
 });
 
 const cambiarEstado = Joi.object({

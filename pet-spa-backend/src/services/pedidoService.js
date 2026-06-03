@@ -2,16 +2,50 @@
 
 const pedidoRepo   = require('../repositories/pedidoRepository');
 const productoRepo = require('../repositories/productoRepository');
+const notifRepo    = require('../repositories/notificacionRepository');
+const notifSvc     = require('./notificationService');
 const AppError     = require('../utils/AppError');
 const db           = require('../config/db');
+const logger       = require('../config/logger');
 
-async function crearPedido({ idUsuario, items, notas }) {
+async function notificarBajoStockAsync(productos) {
+  try {
+    const admins = await notifRepo.getAdminEmails();
+    if (!admins.length) return;
+    for (const p of productos) {
+      const yaNotificado = await notifRepo.bajoStockReciente(p.id_producto);
+      if (yaNotificado) continue;
+      await notifSvc.notificarBajoStock(p, admins);
+      for (const admin of admins) {
+        await notifRepo.marcarEnviada('bajo_stock', String(p.id_producto), admin.email);
+      }
+    }
+  } catch (err) {
+    logger.error('Error notificando bajo stock', { error: err.message });
+  }
+}
+
+async function crearPedido({ idUsuario, items, notas, metodoPago = null, referenciaPago = null, completarInmediatamente = false }) {
   if (!items || items.length === 0) {
     throw new AppError('El pedido debe tener al menos un producto.', 400, 'EMPTY_ORDER');
   }
 
-  return db.withTransaction(async (client) => {
-    const pedido = await pedidoRepo.create({ idUsuario, notas }, client);
+  // Estado según el flujo:
+  // completarInmediatamente=true (recepcion, venta directa)  → 'completado' + pago en caja
+  // metodoPago informado (cliente seleccionó cómo pagar)     → 'enviado' (recepcion confirma)
+  // sin metodoPago (borrador)                                → 'borrador'
+  const estadoInicial = completarInmediatamente ? 'completado' : (metodoPago ? 'enviado' : 'borrador');
+
+  const productosConBajoStock = [];
+
+  const result = await db.withTransaction(async (client) => {
+    const pedido = await pedidoRepo.create({
+      idUsuario,
+      notas,
+      metodoPago:    metodoPago    ?? null,
+      referenciaPago: referenciaPago ?? null,
+      estado:        estadoInicial,
+    }, client);
 
     let total = 0;
     for (const item of items) {
@@ -23,7 +57,11 @@ async function crearPedido({ idUsuario, items, notas }) {
         throw new AppError(`Stock insuficiente para: ${producto.nombre}`, 400, 'INSUFFICIENT_STOCK');
       }
 
-      await productoRepo.descontarStock(item.idProducto, item.cantidad, client);
+      const actualizado = await productoRepo.descontarStock(item.idProducto, item.cantidad, client);
+      if (actualizado && Number(actualizado.stock) <= Number(actualizado.stock_minimo)) {
+        productosConBajoStock.push(actualizado);
+      }
+
       await pedidoRepo.addItem({
         idPedido:       pedido.id_pedido,
         idProducto:     item.idProducto,
@@ -31,13 +69,31 @@ async function crearPedido({ idUsuario, items, notas }) {
         precioUnitario: producto.precio,
       }, client);
 
-      total += producto.precio * item.cantidad;
+      total += Number(producto.precio) * item.cantidad;
     }
 
     const pedidoFinal = await pedidoRepo.updateTotal(pedido.id_pedido, total, client);
-    const itemsGuardados = await pedidoRepo.getItems(pedido.id_pedido, client);
+
+    // Venta directa de recepción: registrar pago en caja dentro de la misma transacción
+    if (completarInmediatamente && metodoPago) {
+      await pedidoRepo.createPago({
+        idPedido:      pedidoFinal.id_pedido,
+        monto:         total,
+        metodo:        metodoPago,
+        referencia:    referenciaPago ?? null,
+        registradoPor: idUsuario,
+      }, client);
+    }
+
+    const itemsGuardados = await pedidoRepo.getItems(pedidoFinal.id_pedido, client);
     return { pedido: pedidoFinal, items: itemsGuardados };
   });
+
+  if (productosConBajoStock.length > 0) {
+    notificarBajoStockAsync(productosConBajoStock);
+  }
+
+  return result;
 }
 
 async function getPedido(idPedido, idUsuario, rol) {

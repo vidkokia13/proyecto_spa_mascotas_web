@@ -12,7 +12,7 @@ const { uploadProducto }    = require('../middlewares/upload');
 const router = Router();
 router.use(authRequired);
 
-const soloJefeAdmin = requireRole(['admin', 'jefe']);
+const soloJefeAdmin = requireRole('admin', 'jefe');
 
 // Cualquier usuario autenticado puede listar y ver productos
 router.get('/',    asyncHandler(productoController.listar));

@@ -5,13 +5,22 @@ import { usePedidoStore } from '@/presentation/stores/pedido.store'
 import BaseButton from '@/presentation/components/ui/BaseButton.vue'
 import BaseModal  from '@/presentation/components/ui/BaseModal.vue'
 import { ROUTE_NAMES } from '@/shared/constants/routes'
+import type { MetodoPago } from '@/shared/types/agenda.types'
 
 const store  = usePedidoStore()
 const router = useRouter()
 
-const notas      = ref('')
-const pedidoOk   = ref<{ id_pedido: string; total: number } | null>(null)
-const copiado    = ref(false)
+const notas         = ref('')
+const metodoPago    = ref<MetodoPago | null>(null)
+const referenciaPago = ref('')
+const pedidoOk      = ref<{ id_pedido: string; total: number } | null>(null)
+const copiado       = ref(false)
+
+const METODOS: { v: MetodoPago; l: string; icon: string }[] = [
+  { v: 'efectivo',       l: 'Efectivo',       icon: '💵' },
+  { v: 'qr',            l: 'QR / Código QR',  icon: '📱' },
+  { v: 'transferencia', l: 'Transferencia',    icon: '🏦' },
+]
 
 const totalCarrito = computed(() => store.totalCarrito())
 
@@ -44,10 +53,20 @@ async function copiarCarrito() {
 // ── Pedido ────────────────────────────────────────────────────────────────────
 
 async function confirmarPedido() {
+  if (!metodoPago.value) {
+    alert('Por favor selecciona un método de pago.')
+    return
+  }
   try {
-    const result = await store.confirmarPedido(notas.value || undefined)
+    const result = await store.confirmarPedido(
+      notas.value || undefined,
+      metodoPago.value,
+      referenciaPago.value || undefined,
+    )
     pedidoOk.value = { id_pedido: result.pedido.id_pedido, total: result.pedido.total }
-    notas.value = ''
+    notas.value        = ''
+    metodoPago.value   = null
+    referenciaPago.value = ''
   } catch (e: any) {
     alert(e.message)
   }
@@ -167,8 +186,41 @@ function volverTienda() {
         </div>
       </div>
 
-      <!-- Notas y confirmar -->
+      <!-- Método de pago + notas + confirmar -->
       <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 space-y-4">
+
+        <!-- Método de pago -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Método de pago <span class="text-red-500">*</span>
+          </label>
+          <div class="grid grid-cols-3 gap-2">
+            <button
+              v-for="m in METODOS" :key="m.v"
+              :class="[
+                'py-2.5 px-2 rounded-xl border text-sm font-medium transition flex flex-col items-center gap-1',
+                metodoPago === m.v
+                  ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
+                  : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700',
+              ]"
+              @click="metodoPago = m.v"
+            >
+              <span class="text-lg">{{ m.icon }}</span>
+              <span class="text-xs leading-tight text-center">{{ m.l }}</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Referencia (solo QR/transferencia) -->
+        <div v-if="metodoPago && metodoPago !== 'efectivo'">
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Referencia / Código de operación (opcional)</label>
+          <input
+            v-model="referenciaPago" type="text" placeholder="Nro. de transacción o código QR"
+            class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+          />
+        </div>
+
+        <!-- Notas -->
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notas del pedido (opcional)</label>
           <textarea
@@ -177,10 +229,13 @@ function volverTienda() {
             class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
         </div>
-        <BaseButton class="w-full justify-center" :disabled="store.loading" @click="confirmarPedido">
+
+        <BaseButton class="w-full justify-center" :disabled="store.loading || !metodoPago" @click="confirmarPedido">
           {{ store.loading ? 'Enviando pedido...' : 'Confirmar pedido' }}
         </BaseButton>
-        <p class="text-xs text-center text-gray-400">Recepción procesará tu pedido y te contactará para el pago.</p>
+        <p class="text-xs text-center text-gray-400">
+          Recepción verificará tu pago y procesará el pedido.
+        </p>
       </div>
     </template>
 

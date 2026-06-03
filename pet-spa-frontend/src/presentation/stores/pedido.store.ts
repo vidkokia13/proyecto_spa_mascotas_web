@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
-import type { Pedido, PedidoItem, CreatePedidoItem, EstadoPedido } from '@/shared/types/agenda.types'
+import type { Pedido, PedidoItem, CreatePedidoItem, EstadoPedido, MetodoPago } from '@/shared/types/agenda.types'
 import * as ds from '@/data/datasources/PedidoDatasource'
 
 const CARRITO_KEY     = 'petspa_carrito'
@@ -76,13 +76,15 @@ export const usePedidoStore = defineStore('pedido', () => {
 
   const totalCarrito = () => carrito.value.reduce((acc, i) => acc + Number(i.precio) * Number(i.cantidad), 0)
 
-  async function confirmarPedido(notas?: string) {
+  async function confirmarPedido(notas?: string, metodoPago?: MetodoPago | null, referenciaPago?: string) {
     loading.value = true
     error.value   = null
     try {
       const result = await ds.createPedido({
         items: carrito.value.map(i => ({ idProducto: i.idProducto, cantidad: i.cantidad })),
         notas,
+        metodoPago:    metodoPago ?? null,
+        referenciaPago: referenciaPago || null,
       })
       limpiarCarrito()
       return result

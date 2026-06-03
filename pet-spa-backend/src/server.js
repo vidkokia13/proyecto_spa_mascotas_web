@@ -8,15 +8,17 @@
  */
 'use strict';
 
-const app = require('./app');
-const env = require('./config/env');
-const logger = require('./config/logger');
-const db = require('./config/db');
+const app       = require('./app');
+const env       = require('./config/env');
+const logger    = require('./config/logger');
+const db        = require('./config/db');
+const scheduler = require('./services/schedulerService');
 
 (async () => {
   try {
     const now = await db.ping();
     logger.info(`✅ Conectado a PostgreSQL (${env.db.database}) — ${now}`);
+    scheduler.iniciarScheduler();
   } catch (err) {
     logger.error('❌ No se pudo conectar a PostgreSQL', { error: err.message });
     process.exit(1);

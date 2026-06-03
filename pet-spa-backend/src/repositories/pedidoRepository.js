@@ -40,10 +40,11 @@ async function findAll({ estado } = {}, client = db) {
   return rows;
 }
 
-async function create({ idUsuario, notas }, client = db) {
+async function create({ idUsuario, notas, metodoPago = null, referenciaPago = null, estado = 'borrador' }, client = db) {
   const { rows } = await client.query(
-    `INSERT INTO pedidos (id_usuario, notas) VALUES ($1, $2) RETURNING *`,
-    [idUsuario, notas ?? null],
+    `INSERT INTO pedidos (id_usuario, notas, metodo_pago, referencia_pago, estado)
+     VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+    [idUsuario, notas ?? null, metodoPago, referenciaPago, estado],
   );
   return rows[0];
 }
