@@ -508,6 +508,38 @@ export interface CreatePedidoPayload {
 export interface PedidoListResponse { pedidos: Pedido[] }
 export interface PedidoDetalleResponse { pedido: Pedido; items: PedidoItem[] }
 
+// ── Notificaciones ────────────────────────────────────────────────────────────
+export type TipoNotificacion =
+  | 'recordatorio_24h'
+  | 'recordatorio_2h'
+  | 'bajo_stock'
+
+export interface NotificacionEnviada {
+  id:            number
+  tipo:          TipoNotificacion
+  referencia_id: string
+  enviado_a:     string | null
+  enviado_en:    string
+}
+
+export interface NotifStatItem {
+  tipo:  TipoNotificacion
+  total: number
+}
+
+export interface NotifListResponse {
+  notificaciones: NotificacionEnviada[]
+  total:          number
+  limit:          number
+  offset:         number
+}
+
+export interface NotifStatsResponse {
+  fecha:    string
+  hoy:      NotifStatItem[]
+  historico: NotifStatItem[]
+}
+
 // ── Caja ──────────────────────────────────────────────────────────────────────
 export interface ResumenMetodo {
   metodo:           string

@@ -86,6 +86,59 @@ async function getAdminEmails(client = db) {
   return rows;
 }
 
+// ── Panel de administración ───────────────────────────────────────────────────
+
+async function findAll({ tipo, fecha, limit = 50, offset = 0 } = {}, client = db) {
+  const conditions = [];
+  const values     = [];
+  let i = 1;
+  if (tipo)  { conditions.push(`tipo = $${i++}`);             values.push(tipo); }
+  if (fecha) { conditions.push(`DATE(enviado_en) = $${i++}`); values.push(fecha); }
+  const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+  const { rows } = await client.query(
+    `SELECT * FROM notificaciones_enviadas
+     ${where}
+     ORDER BY enviado_en DESC
+     LIMIT $${i++} OFFSET $${i++}`,
+    [...values, Number(limit), Number(offset)],
+  );
+  return rows;
+}
+
+async function countAll({ tipo, fecha } = {}, client = db) {
+  const conditions = [];
+  const values     = [];
+  let i = 1;
+  if (tipo)  { conditions.push(`tipo = $${i++}`);             values.push(tipo); }
+  if (fecha) { conditions.push(`DATE(enviado_en) = $${i++}`); values.push(fecha); }
+  const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+  const { rows } = await client.query(
+    `SELECT COUNT(*)::int AS total FROM notificaciones_enviadas ${where}`,
+    values,
+  );
+  return rows[0]?.total ?? 0;
+}
+
+async function statsPorTipo(fecha, client = db) {
+  const { rows } = await client.query(
+    `SELECT tipo, COUNT(*)::int AS total
+     FROM notificaciones_enviadas
+     WHERE DATE(enviado_en) = $1
+     GROUP BY tipo`,
+    [fecha],
+  );
+  return rows;
+}
+
+async function totalHistorico(client = db) {
+  const { rows } = await client.query(
+    `SELECT tipo, COUNT(*)::int AS total
+     FROM notificaciones_enviadas
+     GROUP BY tipo`,
+  );
+  return rows;
+}
+
 module.exports = {
   citasPendientes24h,
   citasPendientes2h,
@@ -93,4 +146,9 @@ module.exports = {
   marcarEnviada,
   bajoStockReciente,
   getAdminEmails,
+  // panel admin
+  findAll,
+  countAll,
+  statsPorTipo,
+  totalHistorico,
 };

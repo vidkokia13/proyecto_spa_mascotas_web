@@ -112,5 +112,9 @@ export const API_ENDPOINTS = {
     SUBIR:    (id: string) => `/mascotas/${id}/foto`,
     ELIMINAR: (id: string) => `/mascotas/${id}/foto`,
   },
+  NOTIFICACIONES: {
+    BASE:  '/notificaciones',
+    STATS: '/notificaciones/stats',
+  },
   HEALTH: '/health',
 } as const

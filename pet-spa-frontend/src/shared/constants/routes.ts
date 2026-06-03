@@ -35,10 +35,11 @@ export const ROUTE_NAMES = {
   AGENDA_CALENDARIO:  'agenda-calendario',
   AGENDA_GROOMERS:    'agenda-groomers',
 
-  ADMIN_PRODUCTOS:     'admin-productos',
-  CLIENT_TIENDA:       'client-tienda',
-  CLIENT_CARRITO:      'client-carrito',
-  RECEPCION_PEDIDOS:   'recepcion-pedidos',
+  ADMIN_PRODUCTOS:       'admin-productos',
+  CLIENT_TIENDA:         'client-tienda',
+  CLIENT_CARRITO:        'client-carrito',
+  RECEPCION_PEDIDOS:     'recepcion-pedidos',
+  ADMIN_NOTIFICACIONES:  'admin-notificaciones',
 } as const
 
 export const ROUTE_PATHS = {
@@ -77,8 +78,9 @@ export const ROUTE_PATHS = {
   AGENDA_CALENDARIO:  '/agenda/calendario',
   AGENDA_GROOMERS:    '/agenda/groomers',
 
-  ADMIN_PRODUCTOS:    '/admin/productos',
-  CLIENT_TIENDA:      '/client/tienda',
-  CLIENT_CARRITO:     '/client/carrito',
-  RECEPCION_PEDIDOS:  '/recepcion/pedidos',
+  ADMIN_PRODUCTOS:      '/admin/productos',
+  CLIENT_TIENDA:        '/client/tienda',
+  CLIENT_CARRITO:       '/client/carrito',
+  RECEPCION_PEDIDOS:    '/recepcion/pedidos',
+  ADMIN_NOTIFICACIONES: '/admin/notificaciones',
 } as const

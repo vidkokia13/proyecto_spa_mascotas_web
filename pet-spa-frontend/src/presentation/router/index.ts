@@ -104,6 +104,13 @@ const router = createRouter({
           beforeEnter: roleGuard([ROLES.ADMIN, ROLES.JEFE]),
         },
         {
+          path: 'notificaciones',
+          name: ROUTE_NAMES.ADMIN_NOTIFICACIONES,
+          component: () => import('@/presentation/views/admin/NotificacionesView.vue'),
+          meta: { requiresAuth: true, layout: 'dashboard' },
+          beforeEnter: roleGuard([ROLES.ADMIN, ROLES.JEFE]),
+        },
+        {
           path: 'caja',
           name: ROUTE_NAMES.ADMIN_CAJA,
           component: () => import('@/presentation/views/admin/CajaView.vue'),
