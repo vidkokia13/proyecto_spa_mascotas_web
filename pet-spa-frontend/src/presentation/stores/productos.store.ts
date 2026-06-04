@@ -8,7 +8,7 @@ export const useProductosStore = defineStore('productos', () => {
   const loading    = ref(false)
   const error      = ref<string | null>(null)
 
-  async function cargar(params?: { categoria?: CategoriaProducto; buscar?: string }) {
+  async function cargar(params?: { categoria?: CategoriaProducto; buscar?: string; soloActivos?: boolean }) {
     loading.value = true
     error.value   = null
     try {
@@ -22,15 +22,13 @@ export const useProductosStore = defineStore('productos', () => {
 
   async function crear(payload: CreateProductoPayload, imagen?: File) {
     const p = await ds.createProducto(payload, imagen)
-    // Recarga desde el servidor para reflejar la URL real de Cloudinary
-    await cargar()
+    await cargar({ soloActivos: false })
     return p
   }
 
   async function actualizar(id: string, payload: UpdateProductoPayload, imagen?: File) {
     const p = await ds.updateProducto(id, payload, imagen)
-    // Recarga para asegurar que imagen_url e imagen_public_id estén actualizados
-    await cargar()
+    await cargar({ soloActivos: false })
     return p
   }
 

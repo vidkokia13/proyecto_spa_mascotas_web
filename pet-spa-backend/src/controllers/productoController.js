@@ -3,8 +3,14 @@
 const productoService = require('../services/productoService');
 
 async function listar(req, res) {
-  const { categoria, buscar } = req.query;
-  const productos = await productoService.listarProductos({ categoria, buscar });
+  const { categoria, buscar, soloActivos } = req.query;
+  // soloActivos='false' desde el admin → muestra todos; por defecto true (cliente/público)
+  const filtros = {
+    categoria,
+    buscar,
+    soloActivos: soloActivos === 'false' ? false : true,
+  };
+  const productos = await productoService.listarProductos(filtros);
   res.json({ productos });
 }
 

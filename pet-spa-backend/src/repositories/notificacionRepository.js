@@ -93,7 +93,7 @@ async function findAll({ tipo, fecha, limit = 50, offset = 0 } = {}, client = db
   const values     = [];
   let i = 1;
   if (tipo)  { conditions.push(`tipo = $${i++}`);             values.push(tipo); }
-  if (fecha) { conditions.push(`DATE(enviado_en) = $${i++}`); values.push(fecha); }
+  if (fecha) { conditions.push(`DATE(enviado_en AT TIME ZONE 'UTC') = $${i++}`); values.push(fecha); }
   const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
   const { rows } = await client.query(
     `SELECT * FROM notificaciones_enviadas
@@ -110,7 +110,7 @@ async function countAll({ tipo, fecha } = {}, client = db) {
   const values     = [];
   let i = 1;
   if (tipo)  { conditions.push(`tipo = $${i++}`);             values.push(tipo); }
-  if (fecha) { conditions.push(`DATE(enviado_en) = $${i++}`); values.push(fecha); }
+  if (fecha) { conditions.push(`DATE(enviado_en AT TIME ZONE 'UTC') = $${i++}`); values.push(fecha); }
   const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
   const { rows } = await client.query(
     `SELECT COUNT(*)::int AS total FROM notificaciones_enviadas ${where}`,
@@ -120,10 +120,17 @@ async function countAll({ tipo, fecha } = {}, client = db) {
 }
 
 async function statsPorTipo(fecha, client = db) {
+  // Si no hay fecha, devuelve totales históricos por tipo
+  if (!fecha) {
+    const { rows } = await client.query(
+      `SELECT tipo, COUNT(*)::int AS total FROM notificaciones_enviadas GROUP BY tipo`,
+    );
+    return rows;
+  }
   const { rows } = await client.query(
     `SELECT tipo, COUNT(*)::int AS total
      FROM notificaciones_enviadas
-     WHERE DATE(enviado_en) = $1
+     WHERE DATE(enviado_en AT TIME ZONE 'UTC') = $1
      GROUP BY tipo`,
     [fecha],
   );

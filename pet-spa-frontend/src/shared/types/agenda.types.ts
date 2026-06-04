@@ -513,6 +513,11 @@ export type TipoNotificacion =
   | 'recordatorio_24h'
   | 'recordatorio_2h'
   | 'bajo_stock'
+  | 'cita_confirmada'
+  | 'cita_cancelada'
+  | 'cita_cancelada_cliente'
+  | 'cita_completada'
+  | 'cita_reprogramada'
 
 export interface NotificacionEnviada {
   id:            number
@@ -538,6 +543,101 @@ export interface NotifStatsResponse {
   fecha:    string
   hoy:      NotifStatItem[]
   historico: NotifStatItem[]
+}
+
+// ── Reportes ──────────────────────────────────────────────────────────────────
+export interface ReportePeriodo { inicio: string; fin: string }
+
+export interface VentasResumen {
+  total_pagos: number; total_citas_pagadas: number
+  total_bruto: number; total_descuentos: number; total_neto: number
+  total_ventas_tienda: number; total_tienda: number
+}
+export interface MetodoPagoStat { metodo: string; cantidad: number; total: number }
+export interface RankingServicio {
+  id_servicio: string; servicio: string; categoria: string
+  num_citas: number; ingresos: number; promedio_ingreso: number
+}
+export interface TendenciaDia { fecha: string; pagos: number; total: number }
+export interface VentasReporte {
+  periodo: ReportePeriodo; resumen: VentasResumen
+  porMetodoCitas: MetodoPagoStat[]; porMetodoTienda: MetodoPagoStat[]
+  rankingServicios: RankingServicio[]; tendenciaDiaria: TendenciaDia[]
+}
+
+export interface OcupacionResumen {
+  total_citas: number; completadas: number; canceladas: number; activas: number
+  tasa_completadas_pct: number; tasa_cancelacion_pct: number
+}
+export interface OcupacionDia {
+  fecha: string; total: number; completadas: number; canceladas: number; activas: number
+}
+export interface OcupacionGroomer {
+  groomer: string; total: number; completadas: number; canceladas: number; tasa_pct: number
+}
+export interface OcupacionReporte {
+  periodo: ReportePeriodo; resumen: OcupacionResumen
+  porDia: OcupacionDia[]; porGroomer: OcupacionGroomer[]
+}
+
+export interface NpsResumen {
+  total_calificaciones: number; promedio: number
+  promotores: number; pasivos: number; detractores: number; nps: number
+}
+export interface NpsResena {
+  puntuacion: number; comentario: string | null; creado_en: string
+  cliente: string; mascota: string; servicio: string
+}
+export interface NpsReporte {
+  periodo: ReportePeriodo; resumen: NpsResumen
+  distribucion: { puntuacion: number; cantidad: number }[]
+  recientes: NpsResena[]
+}
+
+export interface CitaCronograma {
+  id_cita: string; fecha_hora_inicio: string; fecha_hora_fin: string
+  estado: string; notas: string | null
+  mascota: string; tamano: string; temperamento: string
+  servicio: string; cliente: string; email_cliente: string; groomer: string
+}
+
+export interface CancelacionItem {
+  id_cita: string; fecha_cita: string; fecha_hora_inicio: string
+  motivo_cancelacion: string | null
+  mascota: string; servicio: string; cliente: string; email_cliente: string
+}
+
+export interface ProductividadGroomer {
+  id_trabajador: string; groomer: string
+  total_citas: number; completadas: number; canceladas: number
+  ingresos_generados: number; tasa_completadas_pct: number; duracion_promedio_min: number
+}
+
+export interface InsumoGroomer {
+  id_insumo: string; insumo: string; unidad: string
+  num_citas: number; total_usado: number; total_devuelto: number
+  total_desperdicio: number; promedio_por_cita: number
+}
+
+export interface HistorialCita {
+  id_cita: string; fecha_cita: string; fecha_hora_inicio: string; estado: string
+  id_mascota: string; mascota: string; tamano: string; foto_mascota: string | null
+  servicio: string; groomer: string
+  estado_pelaje: string | null; condicion_piel: string | null
+  observaciones: string | null; peso_actual: number | null
+  estado_ingreso: string | null; recomendaciones: string | null
+  puntuacion: number | null; comentario_calificacion: string | null
+  fotos: { url: string; tipo: 'antes' | 'durante' | 'despues' }[]
+}
+
+export interface PromocionUsada {
+  id_promocion: string; promocion: string; tipo: string; valor: number
+  codigo: string | null; monto: number; descuento_aplicado: number
+  creado_en: string; servicio: string
+}
+export interface PromocionDisponible {
+  id_promocion: string; nombre: string; tipo: string; valor: number
+  codigo: string | null; descripcion: string | null; fecha_inicio: string; fecha_fin: string
 }
 
 // ── Caja ──────────────────────────────────────────────────────────────────────

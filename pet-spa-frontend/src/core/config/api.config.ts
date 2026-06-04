@@ -116,5 +116,18 @@ export const API_ENDPOINTS = {
     BASE:  '/notificaciones',
     STATS: '/notificaciones/stats',
   },
+  REPORTES: {
+    VENTAS:            '/reportes/ventas',
+    OCUPACION:         '/reportes/ocupacion',
+    NPS:               '/reportes/nps',
+    CRONOGRAMA:        '/reportes/cronograma',
+    CANCELACIONES:     '/reportes/cancelaciones',
+    PRODUCTIVIDAD:     '/reportes/productividad',
+    MIS_INSUMOS:       '/reportes/mis-insumos',
+    HISTORIAL_CLINICO: '/reportes/historial-clinico',
+    MIS_PROMOCIONES:   '/reportes/mis-promociones',
+    CALIFICACIONES:    '/reportes/calificaciones',
+    CALIFICACION_CITA: (id: string) => `/reportes/calificaciones/cita/${id}`,
+  },
   HEALTH: '/health',
 } as const

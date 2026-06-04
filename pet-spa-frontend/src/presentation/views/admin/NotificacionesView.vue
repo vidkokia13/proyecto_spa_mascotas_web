@@ -17,24 +17,34 @@ const total        = ref(0)
 const statsHoy     = ref<NotifStatItem[]>([])
 const statsHistorico = ref<NotifStatItem[]>([])
 
-const fecha    = ref(new Date().toISOString().slice(0, 10))
+const fecha      = ref('')   // vacío = todas las fechas
 const filtroTipo = ref<TipoNotificacion | ''>('')
-const page     = ref(0)
-const PAGE_SIZE = 20
+const page       = ref(0)
+const PAGE_SIZE  = 20
 
 // ── Labels y helpers ──────────────────────────────────────────────────────────
 
-const TIPO_META: Record<TipoNotificacion, { label: string; variant: string; icon: string; desc: string }> = {
-  recordatorio_24h: { label: 'Recordatorio 24h', variant: 'info',    icon: '📅', desc: 'Enviado 24 h antes de la cita' },
-  recordatorio_2h:  { label: 'Recordatorio 2h',  variant: 'warning', icon: '⏰', desc: 'Enviado 2 h antes de la cita' },
-  bajo_stock:       { label: 'Bajo stock',        variant: 'error',   icon: '📦', desc: 'Producto por debajo del mínimo' },
+const TIPO_META: Record<string, { label: string; variant: string; icon: string; desc: string }> = {
+  recordatorio_24h:      { label: 'Recordatorio 24h',    variant: 'info',    icon: '📅', desc: '24 h antes de la cita' },
+  recordatorio_2h:       { label: 'Recordatorio 2h',     variant: 'warning', icon: '⏰', desc: '2 h antes de la cita' },
+  bajo_stock:            { label: 'Bajo stock',           variant: 'error',   icon: '📦', desc: 'Stock por debajo del mínimo' },
+  cita_confirmada:       { label: 'Cita confirmada',      variant: 'success', icon: '✅', desc: 'Cita confirmada por recepción' },
+  cita_cancelada:        { label: 'Cita cancelada',       variant: 'error',   icon: '❌', desc: 'Cita cancelada por interno' },
+  cita_cancelada_cliente:{ label: 'Cancelada por cliente',variant: 'error',   icon: '🚫', desc: 'Cliente canceló su cita' },
+  cita_completada:       { label: 'Servicio completado',  variant: 'success', icon: '🐾', desc: 'Mascota lista para recoger' },
+  cita_reprogramada:     { label: 'Reprogramada',         variant: 'info',    icon: '📆', desc: 'Cita movida a nueva fecha' },
 }
 
 const TIPOS: { v: TipoNotificacion | ''; l: string }[] = [
-  { v: '',                l: 'Todas'          },
-  { v: 'recordatorio_24h', l: 'Recordatorio 24h' },
-  { v: 'recordatorio_2h',  l: 'Recordatorio 2h'  },
-  { v: 'bajo_stock',       l: 'Bajo stock'     },
+  { v: '',                  l: 'Todas'                },
+  { v: 'cita_confirmada',   l: 'Cita confirmada'      },
+  { v: 'cita_completada',   l: 'Servicio completado'  },
+  { v: 'cita_cancelada',    l: 'Cita cancelada'       },
+  { v: 'cita_cancelada_cliente', l: 'Cancelada cliente' },
+  { v: 'cita_reprogramada', l: 'Reprogramada'         },
+  { v: 'recordatorio_24h',  l: 'Recordatorio 24h'     },
+  { v: 'recordatorio_2h',   l: 'Recordatorio 2h'      },
+  { v: 'bajo_stock',        l: 'Bajo stock'           },
 ]
 
 function statHoy(tipo: TipoNotificacion): number {
@@ -54,11 +64,11 @@ async function cargar() {
     const [lista, st] = await Promise.all([
       ds.fetchNotificaciones({
         tipo:   filtroTipo.value || undefined,
-        fecha:  fecha.value,
+        fecha:  fecha.value || undefined,   // undefined = sin filtro de fecha
         limit:  PAGE_SIZE,
         offset: page.value * PAGE_SIZE,
       }),
-      ds.fetchStats(fecha.value),
+      ds.fetchStats(fecha.value || undefined),
     ])
     items.value          = lista.notificaciones
     total.value          = lista.total
@@ -105,43 +115,49 @@ function fmtFecha(iso: string): string {
       </p>
     </div>
 
-    <!-- Cards de estadísticas del día -->
+    <!-- Cards de estadísticas -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      <!-- Total hoy -->
+      <!-- Total -->
       <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 flex flex-col gap-1">
-        <span class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Total hoy</span>
-        <span class="text-3xl font-bold text-gray-900 dark:text-white">{{ totalHoy }}</span>
-        <span class="text-xs text-gray-400">{{ fecha }}</span>
+        <span class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Total registradas</span>
+        <span class="text-3xl font-bold text-gray-900 dark:text-white">{{ statsHistorico.reduce((a,s)=>a+s.total,0) }}</span>
+        <span class="text-xs text-gray-400">{{ fecha || 'Todas las fechas' }}</span>
       </div>
 
-      <!-- Recordatorio 24h -->
-      <div class="bg-blue-50 dark:bg-blue-900/20 rounded-2xl border border-blue-100 dark:border-blue-800 p-4 flex flex-col gap-1">
-        <div class="flex items-center gap-2">
-          <span class="text-lg">📅</span>
-          <span class="text-xs font-medium text-blue-700 dark:text-blue-300 uppercase tracking-wide">Recordatorio 24h</span>
+      <!-- Citas confirmadas/completadas -->
+      <div class="bg-green-50 dark:bg-green-900/20 rounded-2xl border border-green-100 dark:border-green-800 p-4 flex flex-col gap-1">
+        <div class="flex items-center gap-1">
+          <span class="text-base">✅🐾</span>
+          <span class="text-xs font-medium text-green-700 dark:text-green-300 uppercase tracking-wide">Citas</span>
         </div>
-        <span class="text-3xl font-bold text-blue-700 dark:text-blue-300">{{ statHoy('recordatorio_24h') }}</span>
-        <span class="text-xs text-blue-500 dark:text-blue-400">{{ statTotal('recordatorio_24h') }} totales</span>
+        <span class="text-3xl font-bold text-green-700 dark:text-green-300">
+          {{ (statTotal('cita_confirmada') + statTotal('cita_completada')) }}
+        </span>
+        <span class="text-xs text-green-500">confirmadas + completadas</span>
       </div>
 
-      <!-- Recordatorio 2h -->
-      <div class="bg-amber-50 dark:bg-amber-900/20 rounded-2xl border border-amber-100 dark:border-amber-800 p-4 flex flex-col gap-1">
-        <div class="flex items-center gap-2">
-          <span class="text-lg">⏰</span>
-          <span class="text-xs font-medium text-amber-700 dark:text-amber-300 uppercase tracking-wide">Recordatorio 2h</span>
-        </div>
-        <span class="text-3xl font-bold text-amber-700 dark:text-amber-300">{{ statHoy('recordatorio_2h') }}</span>
-        <span class="text-xs text-amber-500 dark:text-amber-400">{{ statTotal('recordatorio_2h') }} totales</span>
-      </div>
-
-      <!-- Bajo stock -->
+      <!-- Cancelaciones -->
       <div class="bg-red-50 dark:bg-red-900/20 rounded-2xl border border-red-100 dark:border-red-800 p-4 flex flex-col gap-1">
-        <div class="flex items-center gap-2">
-          <span class="text-lg">📦</span>
-          <span class="text-xs font-medium text-red-700 dark:text-red-300 uppercase tracking-wide">Bajo stock</span>
+        <div class="flex items-center gap-1">
+          <span class="text-base">❌🚫</span>
+          <span class="text-xs font-medium text-red-700 dark:text-red-300 uppercase tracking-wide">Canceladas</span>
         </div>
-        <span class="text-3xl font-bold text-red-700 dark:text-red-300">{{ statHoy('bajo_stock') }}</span>
-        <span class="text-xs text-red-500 dark:text-red-400">{{ statTotal('bajo_stock') }} totales</span>
+        <span class="text-3xl font-bold text-red-700 dark:text-red-300">
+          {{ (statTotal('cita_cancelada') + statTotal('cita_cancelada_cliente')) }}
+        </span>
+        <span class="text-xs text-red-500">por interno + cliente</span>
+      </div>
+
+      <!-- Recordatorios + bajo stock -->
+      <div class="bg-amber-50 dark:bg-amber-900/20 rounded-2xl border border-amber-100 dark:border-amber-800 p-4 flex flex-col gap-1">
+        <div class="flex items-center gap-1">
+          <span class="text-base">⏰📦</span>
+          <span class="text-xs font-medium text-amber-700 dark:text-amber-300 uppercase tracking-wide">Automáticas</span>
+        </div>
+        <span class="text-3xl font-bold text-amber-700 dark:text-amber-300">
+          {{ (statTotal('recordatorio_24h') + statTotal('recordatorio_2h') + statTotal('bajo_stock')) }}
+        </span>
+        <span class="text-xs text-amber-500">recordatorios + bajo stock</span>
       </div>
     </div>
 
@@ -155,6 +171,11 @@ function fmtFecha(iso: string): string {
             v-model="fecha" type="date"
             class="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
+          <button
+            v-if="fecha"
+            class="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 underline"
+            @click="fecha = ''"
+          >Todas las fechas</button>
         </div>
 
         <!-- Tipo -->
@@ -199,10 +220,10 @@ function fmtFecha(iso: string): string {
                     <span class="text-base">{{ TIPO_META[n.tipo]?.icon }}</span>
                     <div>
                       <BaseBadge
-                        :variant="TIPO_META[n.tipo]?.variant as any"
+                        :variant="(TIPO_META[n.tipo]?.variant ?? 'default') as any"
                         size="sm"
-                      >{{ TIPO_META[n.tipo]?.label }}</BaseBadge>
-                      <p class="text-xs text-gray-400 mt-0.5">{{ TIPO_META[n.tipo]?.desc }}</p>
+                      >{{ TIPO_META[n.tipo]?.label ?? n.tipo }}</BaseBadge>
+                      <p class="text-xs text-gray-400 mt-0.5">{{ TIPO_META[n.tipo]?.desc ?? '' }}</p>
                     </div>
                   </div>
                 </td>

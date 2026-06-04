@@ -36,7 +36,8 @@ const navGroups = computed<NavGroup[]>(() => {
           { name: ROUTE_NAMES.ADMIN_USERS,         route: '/admin/users',         icon: 'users',    label: 'Usuarios'         },
           { name: ROUTE_NAMES.ADMIN_LOGS,          route: '/admin/logs',          icon: 'shield',   label: 'Logs'             },
           { name: ROUTE_NAMES.ADMIN_2FA_SETUP,     route: '/admin/2fa-setup',     icon: 'lock-2fa', label: 'Seguridad'        },
-          { name: ROUTE_NAMES.ADMIN_NOTIFICACIONES, route: '/admin/notificaciones', icon: 'bell',   label: 'Notificaciones'   },
+          { name: ROUTE_NAMES.ADMIN_NOTIFICACIONES, route: '/admin/notificaciones', icon: 'bell',    label: 'Notificaciones'  },
+          { name: ROUTE_NAMES.ADMIN_REPORTES,      route: '/admin/reportes',       icon: 'report',  label: 'Reportes'        },
         ],
       },
       {
@@ -76,8 +77,9 @@ const navGroups = computed<NavGroup[]>(() => {
           { name: ROUTE_NAMES.AGENDA_CITAS,         route: '/agenda/citas',         icon: 'calendar',      label: 'Agenda'       },
           { name: ROUTE_NAMES.AGENDA_BLOQUEOS,      route: '/agenda/bloqueos',      icon: 'block',         label: 'Bloqueos'     },
           { name: ROUTE_NAMES.ADMIN_CAJA,           route: '/admin/caja',           icon: 'cash',          label: 'Caja'         },
-          { name: ROUTE_NAMES.RECEPCION_PEDIDOS,   route: '/recepcion/pedidos',    icon: 'shop',          label: 'Pedidos'      },
-          { name: ROUTE_NAMES.CHANGE_PASSWORD,      route: '/change-password',      icon: 'lock',          label: 'Seguridad'    },
+          { name: ROUTE_NAMES.RECEPCION_PEDIDOS,    route: '/recepcion/pedidos',    icon: 'shop',    label: 'Pedidos'   },
+          { name: ROUTE_NAMES.RECEPCION_REPORTES,   route: '/recepcion/reportes',   icon: 'report',  label: 'Reportes'  },
+          { name: ROUTE_NAMES.CHANGE_PASSWORD,       route: '/change-password',      icon: 'lock',    label: 'Seguridad' },
         ],
       },
     ]
@@ -87,9 +89,10 @@ const navGroups = computed<NavGroup[]>(() => {
     return [
       {
         items: [
-          { name: ROUTE_NAMES.EMPLOYEE_DASHBOARD,  route: '/employee/dashboard',  icon: 'home',          label: 'Panel'            },
-          { name: ROUTE_NAMES.AGENDA_CALENDARIO,   route: '/agenda/calendario',   icon: 'calendar-grid', label: 'Calendario'       },
-          { name: ROUTE_NAMES.AGENDA_CITAS,        route: '/agenda/citas',        icon: 'calendar',      label: 'Agenda'           },
+          { name: ROUTE_NAMES.EMPLOYEE_DASHBOARD,  route: '/employee/dashboard',  icon: 'home',          label: 'Panel'             },
+          { name: ROUTE_NAMES.AGENDA_CALENDARIO,   route: '/agenda/calendario',   icon: 'calendar-grid', label: 'Calendario'        },
+          { name: ROUTE_NAMES.AGENDA_CITAS,        route: '/agenda/citas',        icon: 'calendar',      label: 'Agenda'            },
+          { name: ROUTE_NAMES.EMPLOYEE_REPORTES,   route: '/employee/reportes',   icon: 'report',        label: 'Mis reportes'      },
           { name: ROUTE_NAMES.CHANGE_PASSWORD,     route: '/change-password',     icon: 'lock',          label: 'Cambiar contraseña'},
         ],
       },
@@ -103,9 +106,11 @@ const navGroups = computed<NavGroup[]>(() => {
         { name: ROUTE_NAMES.CLIENT_MASCOTAS,   route: '/client/mascotas',   icon: 'pet',      label: 'Mis mascotas' },
         { name: ROUTE_NAMES.CLIENT_CITAS,      route: '/client/citas',      icon: 'calendar', label: 'Mis citas'    },
         { name: ROUTE_NAMES.CLIENT_NUEVA_CITA, route: '/client/nueva-cita', icon: 'plus',     label: 'Nueva cita'   },
-        { name: ROUTE_NAMES.CLIENT_TIENDA,     route: '/client/tienda',     icon: 'shop',     label: 'Tienda'       },
-        { name: ROUTE_NAMES.CLIENT_CARRITO,   route: '/client/carrito',    icon: 'cart',     label: 'Carrito'      },
-        { name: ROUTE_NAMES.CLIENT_PROFILE,    route: '/client/profile',    icon: 'user',     label: 'Mi perfil'    },
+        { name: ROUTE_NAMES.CLIENT_TIENDA,          route: '/client/tienda',         icon: 'shop',    label: 'Tienda'        },
+        { name: ROUTE_NAMES.CLIENT_CARRITO,         route: '/client/carrito',        icon: 'cart',    label: 'Carrito'       },
+        { name: ROUTE_NAMES.CLIENT_HISTORIAL,       route: '/client/historial',      icon: 'report',  label: 'Historial'     },
+        { name: ROUTE_NAMES.CLIENT_MIS_PROMOCIONES, route: '/client/mis-promociones',icon: 'promo',   label: 'Promociones'   },
+        { name: ROUTE_NAMES.CLIENT_PROFILE,         route: '/client/profile',        icon: 'user',    label: 'Mi perfil'     },
       ],
     },
   ]
@@ -224,6 +229,10 @@ const navGroups = computed<NavGroup[]>(() => {
             <!-- cart -->
             <svg v-else-if="item.icon === 'cart'" class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+            <!-- report (reportes) -->
+            <svg v-else-if="item.icon === 'report'" class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
             <!-- bell (notificaciones) -->
             <svg v-else-if="item.icon === 'bell'" class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">

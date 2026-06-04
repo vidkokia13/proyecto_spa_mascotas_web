@@ -45,7 +45,7 @@ const productosFiltrados = computed(() => {
   return list
 })
 
-onMounted(() => store.cargar())
+onMounted(() => store.cargar({ soloActivos: false }))
 
 function openCreate() {
   editId.value = null
@@ -176,7 +176,12 @@ function badgeVariant(cat: CategoriaProducto) {
     <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
       <div
         v-for="p in productosFiltrados" :key="p.id_producto"
-        class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm hover:shadow-md transition"
+        :class="[
+          'rounded-xl border overflow-hidden shadow-sm hover:shadow-md transition',
+          p.activo
+            ? 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+            : 'bg-gray-50 dark:bg-gray-900 border-gray-300 dark:border-gray-600 opacity-70',
+        ]"
       >
         <!-- Imagen -->
         <div class="relative h-40 bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
@@ -184,9 +189,10 @@ function badgeVariant(cat: CategoriaProducto) {
           <svg v-else class="w-12 h-12 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
-          <!-- Badge sin stock -->
-          <span v-if="p.stock === 0" class="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">Sin stock</span>
-          <span v-else-if="p.stock <= p.stock_minimo" class="absolute top-2 right-2 bg-amber-500 text-white text-xs px-2 py-0.5 rounded-full">Stock bajo</span>
+          <!-- Badge estado -->
+          <span v-if="!p.activo" class="absolute top-2 left-2 bg-gray-600 text-white text-xs px-2 py-0.5 rounded-full">Inactivo</span>
+          <span v-if="p.activo && p.stock === 0" class="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">Sin stock</span>
+          <span v-else-if="p.activo && p.stock <= p.stock_minimo" class="absolute top-2 right-2 bg-amber-500 text-white text-xs px-2 py-0.5 rounded-full">Stock bajo</span>
         </div>
 
         <div class="p-4 space-y-2">

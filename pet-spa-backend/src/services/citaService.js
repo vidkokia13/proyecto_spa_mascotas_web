@@ -183,6 +183,7 @@ async function cambiarEstado(idCita, estado, idUsuario, idTrabajador, rol, ipAdd
     email: cita.email_cliente, nombreCliente: cita.nombre_cliente,
     nombreMascota: cita.nombre_mascota, nombreServicio: cita.nombre_servicio,
     fechaHoraInicio: cita.fecha_hora_inicio,
+    idCita,
   };
   if (estado === 'confirmada') notifService.notificarCitaConfirmada(ctx).catch(() => {});
   if (estado === 'cancelada')  notifService.notificarCitaCancelada(ctx).catch(() => {});
@@ -238,7 +239,7 @@ async function reprogramarCita(idCita, { fechaHoraInicio }, idUsuario, rol, ipAd
     notifService.notificarCitaReprogramada({
       email: cita.email_cliente, nombreCliente: cita.nombre_cliente,
       nombreMascota: cita.nombre_mascota, nombreServicio: cita.nombre_servicio,
-      fechaHoraInicio: slotInicio,
+      fechaHoraInicio: slotInicio, idCita,
     }).catch(() => {});
 
     return updated;
@@ -329,7 +330,7 @@ async function cancelarCitaPorCliente(idCita, { motivo, detalle }, idUsuario, ip
   notifService.notificarCancelacion?.({
     email: cita.email_cliente, nombreCliente: cita.nombre_cliente,
     nombreMascota: cita.nombre_mascota, nombreServicio: cita.nombre_servicio,
-    motivo: motivoCompleto,
+    motivo: motivoCompleto, idCita,
   }).catch(() => {});
 
   return updated;

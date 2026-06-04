@@ -16,10 +16,15 @@ async function handleResponse<T>(res: Response): Promise<T> {
   return data as T
 }
 
-export async function fetchProductos(params?: { categoria?: string; buscar?: string }): Promise<Producto[]> {
+export async function fetchProductos(params?: {
+  categoria?: string
+  buscar?: string
+  soloActivos?: boolean
+}): Promise<Producto[]> {
   const qs = new URLSearchParams()
-  if (params?.categoria) qs.set('categoria', params.categoria)
-  if (params?.buscar)    qs.set('buscar', params.buscar)
+  if (params?.categoria)                  qs.set('categoria',   params.categoria)
+  if (params?.buscar)                     qs.set('buscar',      params.buscar)
+  if (params?.soloActivos === false)      qs.set('soloActivos', 'false')
   const url = `${API_BASE_URL}${API_ENDPOINTS.PRODUCTOS.BASE}${qs.toString() ? '?' + qs : ''}`
   const res = await fetch(url, { headers: headers() })
   const data = await handleResponse<ProductoListResponse>(res)

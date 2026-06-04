@@ -39,7 +39,12 @@ export const ROUTE_NAMES = {
   CLIENT_TIENDA:         'client-tienda',
   CLIENT_CARRITO:        'client-carrito',
   RECEPCION_PEDIDOS:     'recepcion-pedidos',
-  ADMIN_NOTIFICACIONES:  'admin-notificaciones',
+  ADMIN_NOTIFICACIONES:   'admin-notificaciones',
+  ADMIN_REPORTES:         'admin-reportes',
+  RECEPCION_REPORTES:     'recepcion-reportes',
+  EMPLOYEE_REPORTES:      'employee-reportes',
+  CLIENT_HISTORIAL:       'client-historial',
+  CLIENT_MIS_PROMOCIONES: 'client-mis-promociones',
 } as const
 
 export const ROUTE_PATHS = {
