@@ -130,6 +130,7 @@ export const API_ENDPOINTS = {
     MIS_PROMOCIONES:   '/reportes/mis-promociones',
     CALIFICACIONES:    '/reportes/calificaciones',
     CALIFICACION_CITA: (id: string) => `/reportes/calificaciones/cita/${id}`,
+    RECOMENDACIONES:   (idMascota: string) => `/reportes/recomendaciones/${idMascota}`,
   },
   HEALTH: '/health',
 } as const

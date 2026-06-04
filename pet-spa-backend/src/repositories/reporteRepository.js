@@ -449,25 +449,14 @@ async function misPromociones(idUsuario, client = db) {
 // ── Calificaciones ────────────────────────────────────────────────────────────
 
 async function crearCalificacion({ idCita, idUsuario, puntuacion, comentario }, client = db) {
-  // Buscar id_cliente a partir de la cita
-  const { rows: citaRows } = await client.query(
-    `SELECT cl.id_cliente
-     FROM citas c
-     JOIN clientes cl ON c.id_cliente = cl.id_cliente
-     WHERE c.id_cita = $1`,
-    [idCita],
-  );
-  if (!citaRows[0]) throw new Error('Cita no encontrada para esta calificación.');
-  const idCliente = citaRows[0].id_cliente;
-
   const { rows } = await client.query(`
-    INSERT INTO calificaciones (id_cita, id_cliente, puntuacion, comentario)
+    INSERT INTO calificaciones (id_cita, id_usuario, puntuacion, comentario)
     VALUES ($1, $2, $3, $4)
     ON CONFLICT (id_cita) DO UPDATE
       SET puntuacion = EXCLUDED.puntuacion,
           comentario = EXCLUDED.comentario
     RETURNING *
-  `, [idCita, idCliente, puntuacion, comentario ?? null]);
+  `, [idCita, idUsuario, puntuacion, comentario ?? null]);
   return rows[0];
 }
 
@@ -475,8 +464,7 @@ async function getCalificacionByCita(idCita, client = db) {
   const { rows } = await client.query(`
     SELECT cal.*, u.nombre AS cliente
     FROM calificaciones cal
-    JOIN clientes cl ON cal.id_cliente = cl.id_cliente
-    JOIN usuarios u  ON cl.id_usuario  = u.id_usuario
+    JOIN usuarios u ON cal.id_usuario = u.id_usuario
     WHERE cal.id_cita = $1
   `, [idCita]);
   return rows[0] ?? null;

@@ -84,6 +84,18 @@ export async function fetchMisPromociones(): Promise<{
   return handle(await fetch(`${API_BASE_URL}${R.MIS_PROMOCIONES}`, { headers: headers() }))
 }
 
+export async function fetchRecomendaciones(idMascota: string): Promise<{
+  mascota: { nombre: string; tamano: string; temperamento: string }
+  categorias: string[]
+  razones: string[]
+  productos: {
+    id_producto: string; nombre: string; descripcion: string | null
+    categoria: string; precio: number; stock: number; imagen_url: string | null
+  }[]
+}> {
+  return handle(await fetch(`${API_BASE_URL}${R.RECOMENDACIONES(idMascota)}`, { headers: headers() }))
+}
+
 export async function crearCalificacion(payload: {
   id_cita: string; puntuacion: number; comentario?: string
 }): Promise<{ calificacion: { id_calificacion: string; puntuacion: number } }> {

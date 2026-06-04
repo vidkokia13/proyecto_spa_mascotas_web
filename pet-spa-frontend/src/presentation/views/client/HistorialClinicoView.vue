@@ -33,7 +33,37 @@ const historialFiltrado = computed(() =>
 const expandida = ref<string | null>(null)
 function toggleExpand(id: string) {
   expandida.value = expandida.value === id ? null : id
+  if (expandida.value) cargarRecomendaciones(id)
 }
+
+// ── Recomendaciones IA ────────────────────────────────────────────────────────
+type Recomendacion = {
+  mascota: { nombre: string; tamano: string; temperamento: string }
+  categorias: string[]
+  razones: string[]
+  productos: { id_producto: string; nombre: string; descripcion: string | null; categoria: string; precio: number; stock: number; imagen_url: string | null }[]
+}
+const recsCache = ref<Record<string, Recomendacion>>({})  // keyed by id_mascota
+const recsLoading = ref<Record<string, boolean>>({})
+
+async function cargarRecomendaciones(idCita: string) {
+  const h = historial.value.find(x => x.id_cita === idCita)
+  if (!h) return
+  const idMascota = h.id_mascota
+  if (recsCache.value[idMascota]) return  // ya cargado
+  recsLoading.value[idMascota] = true
+  try {
+    recsCache.value[idMascota] = await ds.fetchRecomendaciones(idMascota)
+  } catch { /* ignorar si falla */ } finally {
+    recsLoading.value[idMascota] = false
+  }
+}
+
+const CAT_ICON: Record<string, string> = {
+  higiene: '🧴', alimento: '🥣', accesorio: '🎀', juguete: '🎾', salud: '💊', otro: '📦',
+}
+
+const bs = (n: number | string) => `Bs ${Number(n).toFixed(2)}`
 
 // Vista previa de foto
 const fotoActiva = ref<string | null>(null)
@@ -214,6 +244,43 @@ const TIPO_COLOR: Record<string, string> = {
                 </span>
               </div>
             </div>
+          </div>
+
+          <!-- Recomendaciones IA -->
+          <div>
+            <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+              🤖 Productos recomendados para {{ h.mascota }}
+            </p>
+            <div v-if="recsLoading[h.id_mascota]" class="text-xs text-gray-400 py-2">Analizando ficha...</div>
+            <template v-else-if="recsCache[h.id_mascota]">
+              <!-- Razones -->
+              <div class="mb-3 space-y-1">
+                <p
+                  v-for="r in recsCache[h.id_mascota].razones" :key="r"
+                  class="text-xs text-primary-700 dark:text-primary-400 flex items-start gap-1.5"
+                >
+                  <span class="flex-shrink-0 mt-0.5">✦</span> {{ r }}
+                </p>
+              </div>
+              <!-- Productos -->
+              <div v-if="recsCache[h.id_mascota].productos.length" class="grid grid-cols-2 gap-2">
+                <div
+                  v-for="p in recsCache[h.id_mascota].productos" :key="p.id_producto"
+                  class="flex items-start gap-2 bg-gray-50 dark:bg-gray-800 rounded-xl p-2 border border-gray-100 dark:border-gray-700"
+                >
+                  <div class="w-12 h-12 flex-shrink-0 rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                    <img v-if="p.imagen_url" :src="p.imagen_url" :alt="p.nombre" class="w-full h-full object-cover" />
+                    <span v-else class="text-xl">{{ CAT_ICON[p.categoria] ?? '📦' }}</span>
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <p class="text-xs font-medium text-gray-900 dark:text-white leading-tight line-clamp-2">{{ p.nombre }}</p>
+                    <p class="text-xs font-bold text-primary-600 dark:text-primary-400 mt-0.5">{{ bs(p.precio) }}</p>
+                    <span class="text-xs text-gray-400 capitalize">{{ CAT_ICON[p.categoria] }} {{ p.categoria }}</span>
+                  </div>
+                </div>
+              </div>
+              <p v-else class="text-xs text-gray-400 italic">No hay productos disponibles con stock en este momento.</p>
+            </template>
           </div>
 
           <!-- Calificación -->

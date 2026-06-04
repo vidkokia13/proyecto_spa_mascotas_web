@@ -30,4 +30,7 @@ router.get('/mis-promociones',   role('cliente'),                               
 router.post('/calificaciones',          role('cliente'),                        handler(ctrl.crearCalificacion));
 router.get('/calificaciones/cita/:id',  role('admin','jefe','recepcion','trabajador','cliente'), handler(ctrl.getCalificacion));
 
+// ── Recomendaciones IA (cliente ve las suyas, admin/jefe pueden ver cualquiera) ─
+router.get('/recomendaciones/:id',      role('cliente','admin','jefe'),         handler(ctrl.recomendaciones));
+
 module.exports = router;
