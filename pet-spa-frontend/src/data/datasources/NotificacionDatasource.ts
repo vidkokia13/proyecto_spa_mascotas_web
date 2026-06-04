@@ -42,3 +42,32 @@ export async function fetchStats(fecha?: string): Promise<NotifStatsResponse> {
   const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.NOTIFICACIONES.STATS}${qs}`, { headers: headers() })
   return handleResponse<NotifStatsResponse>(res)
 }
+
+export async function checkStock(): Promise<{
+  ok: boolean
+  verificados: number
+  enviados: number
+  mensaje?: string
+  productos?: { nombre: string; stock: number; minimo: number }[]
+  error?: string
+}> {
+  const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.NOTIFICACIONES.CHECK_STOCK}`, {
+    method:  'POST',
+    headers: headers(),
+  })
+  return handleResponse(res)
+}
+
+export async function probarEnvio(): Promise<{
+  ok: boolean
+  resultado: {
+    smtp: { ok: boolean; error: string | null; messageId: string | null }
+    db:   { ok: boolean; error: string | null; tablaExiste: boolean }
+  }
+}> {
+  const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.NOTIFICACIONES.TEST}`, {
+    method:  'POST',
+    headers: headers(),
+  })
+  return handleResponse(res)
+}

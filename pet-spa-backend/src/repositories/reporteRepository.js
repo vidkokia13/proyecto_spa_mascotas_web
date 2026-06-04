@@ -24,13 +24,31 @@ async function ventasPorPeriodo(fechaInicio, fechaFin, client = db) {
     WHERE DATE(p.creado_en) BETWEEN $1 AND $2
   `, params);
 
-  const { rows: resumenTienda } = await client.query(`
-    SELECT
-      COUNT(*)::int                              AS total_ventas_tienda,
-      COALESCE(SUM(monto), 0)::numeric          AS total_tienda
-    FROM pagos_pedidos
-    WHERE DATE(creado_en) BETWEEN $1 AND $2
-  `, params);
+  // pagos_pedidos puede no existir todavía
+  let resumenTienda = [{ total_ventas_tienda: 0, total_tienda: '0' }];
+  let porMetodoTienda = [];
+  try {
+    const r1 = await client.query(`
+      SELECT
+        COUNT(*)::int                              AS total_ventas_tienda,
+        COALESCE(SUM(monto), 0)::numeric          AS total_tienda
+      FROM pagos_pedidos
+      WHERE DATE(creado_en) BETWEEN $1 AND $2
+    `, params);
+    resumenTienda = r1.rows;
+
+    const r2 = await client.query(`
+      SELECT
+        metodo,
+        COUNT(*)::int                        AS cantidad,
+        COALESCE(SUM(monto), 0)::numeric    AS total
+      FROM pagos_pedidos
+      WHERE DATE(creado_en) BETWEEN $1 AND $2
+      GROUP BY metodo
+      ORDER BY total DESC
+    `, params);
+    porMetodoTienda = r2.rows;
+  } catch (_e) { /* tabla pagos_pedidos aún no existe */ }
 
   const { rows: porMetodo } = await client.query(`
     SELECT
@@ -38,17 +56,6 @@ async function ventasPorPeriodo(fechaInicio, fechaFin, client = db) {
       COUNT(*)::int                                   AS cantidad,
       COALESCE(SUM(monto - descuento), 0)::numeric   AS total
     FROM pagos
-    WHERE DATE(creado_en) BETWEEN $1 AND $2
-    GROUP BY metodo
-    ORDER BY total DESC
-  `, params);
-
-  const { rows: porMetodoTienda } = await client.query(`
-    SELECT
-      metodo,
-      COUNT(*)::int                        AS cantidad,
-      COALESCE(SUM(monto), 0)::numeric    AS total
-    FROM pagos_pedidos
     WHERE DATE(creado_en) BETWEEN $1 AND $2
     GROUP BY metodo
     ORDER BY total DESC
@@ -66,7 +73,7 @@ async function ventasPorPeriodo(fechaInicio, fechaFin, client = db) {
     JOIN servicios s ON c.id_servicio = s.id_servicio
     LEFT JOIN pagos p ON p.id_cita = c.id_cita
     WHERE c.estado = 'completada'
-      AND DATE(c.fecha_cita) BETWEEN $1 AND $2
+      AND DATE(c.fecha_hora_inicio) BETWEEN $1 AND $2
     GROUP BY s.id_servicio, s.nombre, s.categoria
     ORDER BY ingresos DESC
   `, params);
@@ -107,20 +114,20 @@ async function ocupacionGlobal(fechaInicio, fechaFin, client = db) {
       ROUND(COUNT(*) FILTER (WHERE estado = 'cancelada')::numeric /
             NULLIF(COUNT(*),0) * 100, 1)::numeric                              AS tasa_cancelacion_pct
     FROM citas
-    WHERE fecha_cita BETWEEN $1 AND $2
+    WHERE DATE(fecha_hora_inicio) BETWEEN $1 AND $2
   `, params);
 
   const { rows: porDia } = await client.query(`
     SELECT
-      fecha_cita::text                                                          AS fecha,
+      DATE(fecha_hora_inicio)::text                                             AS fecha,
       COUNT(*)::int                                                             AS total,
       COUNT(*) FILTER (WHERE estado = 'completada')::int                       AS completadas,
       COUNT(*) FILTER (WHERE estado = 'cancelada')::int                        AS canceladas,
       COUNT(*) FILTER (WHERE estado IN ('pendiente','confirmada','en_proceso'))::int AS activas
     FROM citas
-    WHERE fecha_cita BETWEEN $1 AND $2
-    GROUP BY fecha_cita
-    ORDER BY fecha_cita
+    WHERE DATE(fecha_hora_inicio) BETWEEN $1 AND $2
+    GROUP BY DATE(fecha_hora_inicio)
+    ORDER BY DATE(fecha_hora_inicio)
   `, params);
 
   const { rows: porGroomer } = await client.query(`
@@ -134,7 +141,7 @@ async function ocupacionGlobal(fechaInicio, fechaFin, client = db) {
     FROM citas c
     LEFT JOIN trabajadores t   ON c.id_trabajador = t.id_trabajador
     LEFT JOIN usuarios     tu  ON t.id_usuario    = tu.id_usuario
-    WHERE c.fecha_cita BETWEEN $1 AND $2
+    WHERE DATE(c.fecha_hora_inicio) BETWEEN $1 AND $2
     GROUP BY tu.nombre
     ORDER BY completadas DESC
   `, params);
@@ -147,44 +154,53 @@ async function ocupacionGlobal(fechaInicio, fechaFin, client = db) {
 async function reporteNps(fechaInicio, fechaFin, client = db) {
   const params = rango(fechaInicio, fechaFin);
 
-  const { rows: resumen } = await client.query(`
-    SELECT
-      COUNT(*)::int                                                    AS total_calificaciones,
-      ROUND(AVG(puntuacion), 2)::numeric                               AS promedio,
-      COUNT(*) FILTER (WHERE puntuacion >= 4)::int                    AS promotores,
-      COUNT(*) FILTER (WHERE puntuacion = 3)::int                     AS pasivos,
-      COUNT(*) FILTER (WHERE puntuacion <= 2)::int                    AS detractores,
-      ROUND((COUNT(*) FILTER (WHERE puntuacion >= 4)::numeric -
-             COUNT(*) FILTER (WHERE puntuacion <= 2)::numeric) /
-            NULLIF(COUNT(*), 0) * 100)::int                           AS nps
-    FROM calificaciones
-    WHERE DATE(creado_en) BETWEEN $1 AND $2
-  `, params);
+  // calificaciones puede no existir todavía
+  let resumen = [{ total_calificaciones: 0, promedio: null, promotores: 0, pasivos: 0, detractores: 0, nps: null }];
+  let distribucion = [];
+  let recientes = [];
+  try {
+    const r1 = await client.query(`
+      SELECT
+        COUNT(*)::int                                                    AS total_calificaciones,
+        ROUND(AVG(puntuacion), 2)::numeric                               AS promedio,
+        COUNT(*) FILTER (WHERE puntuacion >= 4)::int                    AS promotores,
+        COUNT(*) FILTER (WHERE puntuacion = 3)::int                     AS pasivos,
+        COUNT(*) FILTER (WHERE puntuacion <= 2)::int                    AS detractores,
+        ROUND((COUNT(*) FILTER (WHERE puntuacion >= 4)::numeric -
+               COUNT(*) FILTER (WHERE puntuacion <= 2)::numeric) /
+              NULLIF(COUNT(*), 0) * 100)::int                           AS nps
+      FROM calificaciones
+      WHERE DATE(creado_en) BETWEEN $1 AND $2
+    `, params);
+    resumen = r1.rows;
 
-  const { rows: distribucion } = await client.query(`
-    SELECT puntuacion, COUNT(*)::int AS cantidad
-    FROM calificaciones
-    WHERE DATE(creado_en) BETWEEN $1 AND $2
-    GROUP BY puntuacion
-    ORDER BY puntuacion
-  `, params);
+    const r2 = await client.query(`
+      SELECT puntuacion, COUNT(*)::int AS cantidad
+      FROM calificaciones
+      WHERE DATE(creado_en) BETWEEN $1 AND $2
+      GROUP BY puntuacion
+      ORDER BY puntuacion
+    `, params);
+    distribucion = r2.rows;
 
-  const { rows: recientes } = await client.query(`
-    SELECT
-      cal.puntuacion, cal.comentario, cal.creado_en,
-      u.nombre    AS cliente,
-      m.nombre    AS mascota,
-      s.nombre    AS servicio
-    FROM calificaciones cal
-    JOIN citas     c  ON cal.id_cita   = c.id_cita
-    JOIN mascotas  m  ON c.id_mascota  = m.id_mascota
-    JOIN servicios s  ON c.id_servicio = s.id_servicio
-    JOIN clientes  cl ON c.id_cliente  = cl.id_cliente
-    JOIN usuarios  u  ON cl.id_usuario = u.id_usuario
-    WHERE DATE(cal.creado_en) BETWEEN $1 AND $2
-    ORDER BY cal.creado_en DESC
-    LIMIT 20
-  `, params);
+    const r3 = await client.query(`
+      SELECT
+        cal.puntuacion, cal.comentario, cal.creado_en,
+        u.nombre    AS cliente,
+        m.nombre    AS mascota,
+        s.nombre    AS servicio
+      FROM calificaciones cal
+      JOIN citas     c  ON cal.id_cita   = c.id_cita
+      JOIN mascotas  m  ON c.id_mascota  = m.id_mascota
+      JOIN servicios s  ON c.id_servicio = s.id_servicio
+      JOIN clientes  cl ON c.id_cliente  = cl.id_cliente
+      JOIN usuarios  u  ON cl.id_usuario = u.id_usuario
+      WHERE DATE(cal.creado_en) BETWEEN $1 AND $2
+      ORDER BY cal.creado_en DESC
+      LIMIT 20
+    `, params);
+    recientes = r3.rows;
+  } catch (_e) { /* tabla calificaciones aún no existe */ }
 
   return { resumen: resumen[0], distribucion, recientes };
 }
@@ -213,7 +229,7 @@ async function cronogramaDiario(fecha, client = db) {
     JOIN usuarios  u  ON cl.id_usuario = u.id_usuario
     LEFT JOIN trabajadores t  ON c.id_trabajador = t.id_trabajador
     LEFT JOIN usuarios    tu  ON t.id_usuario    = tu.id_usuario
-    WHERE c.fecha_cita = $1
+    WHERE DATE(c.fecha_hora_inicio) = $1
       AND c.estado <> 'cancelada'
     ORDER BY c.fecha_hora_inicio NULLS LAST, tu.nombre
   `, [fecha]);
@@ -228,7 +244,7 @@ async function cancelaciones(fechaInicio, fechaFin, client = db) {
   const { rows } = await client.query(`
     SELECT
       c.id_cita,
-      c.fecha_cita,
+      DATE(c.fecha_hora_inicio)::text  AS fecha_cita,
       c.fecha_hora_inicio,
       c.motivo_cancelacion,
       m.nombre  AS mascota,
@@ -241,8 +257,8 @@ async function cancelaciones(fechaInicio, fechaFin, client = db) {
     JOIN clientes  cl ON c.id_cliente  = cl.id_cliente
     JOIN usuarios  u  ON cl.id_usuario = u.id_usuario
     WHERE c.estado = 'cancelada'
-      AND c.fecha_cita BETWEEN $1 AND $2
-    ORDER BY c.fecha_cita DESC, c.fecha_hora_inicio DESC
+      AND DATE(c.fecha_hora_inicio) BETWEEN $1 AND $2
+    ORDER BY c.fecha_hora_inicio DESC
   `, params);
 
   const { rows: resumen } = await client.query(`
@@ -251,7 +267,7 @@ async function cancelaciones(fechaInicio, fechaFin, client = db) {
       COUNT(*) FILTER (WHERE motivo_cancelacion IS NOT NULL)::int AS con_motivo
     FROM citas
     WHERE estado = 'cancelada'
-      AND fecha_cita BETWEEN $1 AND $2
+      AND DATE(fecha_hora_inicio) BETWEEN $1 AND $2
   `, params);
 
   return { cancelaciones: rows, resumen: resumen[0] };
@@ -280,9 +296,9 @@ async function productividadGroomers(fechaInicio, fechaFin, idTrabajador = null,
     FROM trabajadores t
     JOIN usuarios tu ON t.id_usuario = tu.id_usuario
     LEFT JOIN citas c ON c.id_trabajador = t.id_trabajador
-      AND c.fecha_cita BETWEEN $1 AND $2
+      AND DATE(c.fecha_hora_inicio) BETWEEN $1 AND $2
     LEFT JOIN pagos p ON p.id_cita = c.id_cita
-    WHERE tu.activo = true ${filtro}
+    WHERE tu.estado = 'activo' ${filtro}
     GROUP BY t.id_trabajador, tu.nombre
     ORDER BY completadas DESC
   `, params);
@@ -307,7 +323,7 @@ async function insumosGroomer(idTrabajador, fechaInicio, fechaFin, client = db) 
     JOIN insumos i ON ci.id_insumo = i.id_insumo
     JOIN citas   c ON ci.id_cita   = c.id_cita
     WHERE c.id_trabajador = $1
-      AND c.fecha_cita BETWEEN $2 AND $3
+      AND DATE(c.fecha_hora_inicio) BETWEEN $2 AND $3
       AND c.estado = 'completada'
     GROUP BY i.id_insumo, i.nombre, i.unidad
     ORDER BY total_usado DESC
@@ -320,7 +336,7 @@ async function insumosGroomer(idTrabajador, fechaInicio, fechaFin, client = db) 
     FROM cita_insumos ci
     JOIN citas c ON ci.id_cita = c.id_cita
     WHERE c.id_trabajador = $1
-      AND c.fecha_cita BETWEEN $2 AND $3
+      AND DATE(c.fecha_hora_inicio) BETWEEN $2 AND $3
       AND c.estado = 'completada'
   `, [idTrabajador, fechaInicio, fechaFin]);
 
@@ -334,10 +350,19 @@ async function historialClinico(idUsuario, idMascota = null, client = db) {
   const filtroMascota = idMascota ? `AND c.id_mascota = $2` : '';
   if (idMascota) params.push(idMascota);
 
+  const fotosJoin = (() => {
+    try {
+      // tabla cita_fotos
+      return `LEFT JOIN cita_fotos cf ON cf.id_cita = c.id_cita`;
+    } catch (_) {
+      return ``;
+    }
+  })();
+
   const { rows } = await client.query(`
     SELECT
       c.id_cita,
-      c.fecha_cita,
+      DATE(c.fecha_hora_inicio)::text     AS fecha_cita,
       c.fecha_hora_inicio,
       c.estado,
       m.id_mascota,
@@ -374,13 +399,13 @@ async function historialClinico(idUsuario, idMascota = null, client = db) {
       AND c.estado = 'completada'
       ${filtroMascota}
     GROUP BY
-      c.id_cita, c.fecha_cita, c.fecha_hora_inicio, c.estado,
+      c.id_cita, c.fecha_hora_inicio, c.estado,
       m.id_mascota, m.nombre, m.tamano, m.foto_url,
       s.nombre, tu.nombre,
       ft.estado_pelaje, ft.condicion_piel, ft.observaciones,
       ft.peso_actual, ft.estado_ingreso, ft.recomendaciones,
       cal.puntuacion, cal.comentario
-    ORDER BY c.fecha_cita DESC
+    ORDER BY c.fecha_hora_inicio DESC
   `, params);
 
   return rows;
@@ -424,14 +449,25 @@ async function misPromociones(idUsuario, client = db) {
 // ── Calificaciones ────────────────────────────────────────────────────────────
 
 async function crearCalificacion({ idCita, idUsuario, puntuacion, comentario }, client = db) {
+  // Buscar id_cliente a partir de la cita
+  const { rows: citaRows } = await client.query(
+    `SELECT cl.id_cliente
+     FROM citas c
+     JOIN clientes cl ON c.id_cliente = cl.id_cliente
+     WHERE c.id_cita = $1`,
+    [idCita],
+  );
+  if (!citaRows[0]) throw new Error('Cita no encontrada para esta calificación.');
+  const idCliente = citaRows[0].id_cliente;
+
   const { rows } = await client.query(`
-    INSERT INTO calificaciones (id_cita, id_usuario, puntuacion, comentario)
+    INSERT INTO calificaciones (id_cita, id_cliente, puntuacion, comentario)
     VALUES ($1, $2, $3, $4)
     ON CONFLICT (id_cita) DO UPDATE
       SET puntuacion = EXCLUDED.puntuacion,
           comentario = EXCLUDED.comentario
     RETURNING *
-  `, [idCita, idUsuario, puntuacion, comentario ?? null]);
+  `, [idCita, idCliente, puntuacion, comentario ?? null]);
   return rows[0];
 }
 
@@ -439,10 +475,107 @@ async function getCalificacionByCita(idCita, client = db) {
   const { rows } = await client.query(`
     SELECT cal.*, u.nombre AS cliente
     FROM calificaciones cal
-    JOIN usuarios u ON cal.id_usuario = u.id_usuario
+    JOIN clientes cl ON cal.id_cliente = cl.id_cliente
+    JOIN usuarios u  ON cl.id_usuario  = u.id_usuario
     WHERE cal.id_cita = $1
   `, [idCita]);
   return rows[0] ?? null;
+}
+
+// ── 10. Recomendación de productos por mascota (IA rule-based) ───────────────
+
+async function recomendacionesProductos(idMascota, client = db) {
+  // Obtener datos de la mascota + última ficha técnica completada
+  const { rows: [m] } = await client.query(`
+    SELECT
+      ma.id_mascota, ma.nombre, ma.tamano, ma.temperamento, ma.alergias,
+      ft.estado_pelaje, ft.condicion_piel, ft.peso_actual,
+      ft.observaciones, ft.recomendaciones AS recomendaciones_groomer
+    FROM mascotas ma
+    LEFT JOIN LATERAL (
+      SELECT ft2.estado_pelaje, ft2.condicion_piel, ft2.peso_actual,
+             ft2.observaciones, ft2.recomendaciones
+      FROM fichas_tecnicas ft2
+      JOIN citas c ON ft2.id_cita = c.id_cita
+      WHERE c.id_mascota = ma.id_mascota
+        AND c.estado = 'completada'
+      ORDER BY c.fecha_hora_inicio DESC
+      LIMIT 1
+    ) ft ON true
+    WHERE ma.id_mascota = $1
+  `, [idMascota]);
+
+  if (!m) return { productos: [], razones: [] };
+
+  // ── Reglas de negocio ────────────────────────────────────────────────────
+  const cats = new Set();
+  const razones = [];
+
+  const piel       = (m.condicion_piel   ?? '').toLowerCase();
+  const pelaje     = (m.estado_pelaje    ?? '').toLowerCase();
+  const alergias   = (m.alergias         ?? '').toLowerCase();
+  const temp       = (m.temperamento     ?? '').toLowerCase();
+  const obs        = (m.observaciones    ?? '').toLowerCase();
+  const recs       = (m.recomendaciones_groomer ?? '').toLowerCase();
+
+  // Piel/pelaje deteriorado → higiene
+  if (piel.match(/seca|reseca|irritad|escamosa|grasa/) || pelaje.match(/opaco|sin brillo|enredado|maltratado/)) {
+    cats.add('higiene');
+    razones.push('Higiene especializada por condición de piel/pelaje detectada en la última ficha');
+  }
+
+  // Alergias o sensibilidad → salud
+  if (alergias.length > 1 || piel.match(/alergi|dermatitis/) || obs.match(/alergi|sensibil/)) {
+    cats.add('salud');
+    razones.push('Suplementos y productos de salud por alergias o sensibilidad cutánea');
+  }
+
+  // Mascota nerviosa/agresiva/inquieta → juguete para estimulación mental
+  if (temp.match(/nervios|agresiv|inquiet/)) {
+    cats.add('juguete');
+    razones.push('Juguetes de estimulación mental para reducir ansiedad y canalizar energía');
+  }
+
+  // Mascota grande/gigante → alimento premium
+  if (m.tamano === 'grande' || m.tamano === 'gigante') {
+    cats.add('alimento');
+    razones.push('Alimentación premium formulada para razas grandes');
+  }
+
+  // Recomendaciones del groomer mencionan nutrición
+  if (recs.match(/aliment|dieta|nutrici|peso/)) {
+    cats.add('alimento');
+    razones.push('Groomer recomendó atención a la alimentación/peso en la última visita');
+  }
+
+  // Siempre incluir higiene como base
+  cats.add('higiene');
+  if (razones.length === 0) {
+    razones.push('Productos de mantenimiento e higiene para el cuidado regular');
+  }
+
+  // Completar con accesorios si hay pocos resultados
+  if (cats.size < 2) cats.add('accesorio');
+
+  const catList = Array.from(cats);
+
+  // Buscar productos disponibles de esas categorías
+  const { rows: productos } = await client.query(`
+    SELECT id_producto, nombre, descripcion, categoria, precio::numeric, stock, imagen_url
+    FROM productos
+    WHERE activo = true
+      AND stock > 0
+      AND categoria = ANY($1)
+    ORDER BY categoria, stock DESC
+    LIMIT 8
+  `, [catList]);
+
+  return {
+    mascota: { nombre: m.nombre, tamano: m.tamano, temperamento: m.temperamento },
+    categorias: catList,
+    razones,
+    productos,
+  };
 }
 
 // Obtener id_trabajador a partir de id_usuario
@@ -467,4 +600,5 @@ module.exports = {
   crearCalificacion,
   getCalificacionByCita,
   getTrabajadorByUsuario,
+  recomendacionesProductos,
 };

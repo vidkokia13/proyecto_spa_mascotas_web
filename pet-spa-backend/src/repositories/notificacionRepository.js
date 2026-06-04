@@ -81,7 +81,8 @@ async function getAdminEmails(client = db) {
   const { rows } = await client.query(
     `SELECT u.email, u.nombre
      FROM   usuarios u
-     WHERE  u.rol IN ('admin', 'jefe') AND u.activo = true`,
+     JOIN   roles    r ON r.id_rol = u.id_rol
+     WHERE  r.nombre IN ('admin', 'jefe') AND u.estado = 'activo'`,
   );
   return rows;
 }

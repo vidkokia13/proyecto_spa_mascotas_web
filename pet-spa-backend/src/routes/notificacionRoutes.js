@@ -10,7 +10,9 @@ const router = Router();
 router.use(authRequired);
 router.use(requireRole('admin', 'jefe'));
 
-router.get('/',       asyncHandler(notifController.listar));
-router.get('/stats',  asyncHandler(notifController.stats));
+router.get('/',              asyncHandler(notifController.listar));
+router.get('/stats',         asyncHandler(notifController.stats));
+router.post('/test',         asyncHandler(notifController.probar));
+router.post('/check-stock',  asyncHandler(notifController.checkStock));
 
 module.exports = router;

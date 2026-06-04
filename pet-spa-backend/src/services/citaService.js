@@ -432,6 +432,7 @@ async function cerrarServicio(idCita, idUsuario, idTrabajador, rol, ipAddress = 
     nombreMascota:   cita.nombre_mascota,
     nombreServicio:  cita.nombre_servicio,
     recomendaciones: ficha?.recomendaciones ?? null,
+    idCita,
   }).catch(() => {});
 
   return updated;

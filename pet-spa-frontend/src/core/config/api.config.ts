@@ -113,8 +113,10 @@ export const API_ENDPOINTS = {
     ELIMINAR: (id: string) => `/mascotas/${id}/foto`,
   },
   NOTIFICACIONES: {
-    BASE:  '/notificaciones',
-    STATS: '/notificaciones/stats',
+    BASE:        '/notificaciones',
+    STATS:       '/notificaciones/stats',
+    TEST:        '/notificaciones/test',
+    CHECK_STOCK: '/notificaciones/check-stock',
   },
   REPORTES: {
     VENTAS:            '/reportes/ventas',

@@ -50,7 +50,7 @@ const pct = (tipo: string, valor: number) =>
                   <span class="font-mono text-xs bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300 px-2 py-1 rounded-lg">{{ p.codigo }}</span>
                 </p>
               </div>
-              <BaseBadge variant="success" size="sm">Vigente</BaseBadge>
+              <BaseBadge color="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">Vigente</BaseBadge>
             </div>
             <p class="text-xs text-gray-400 mt-2">Válida hasta {{ new Date(p.fecha_fin).toLocaleDateString('es-BO') }}</p>
           </div>

@@ -20,7 +20,10 @@ const cancelaciones = ref<CancelacionItem[]>([])
 const resCancelaciones = ref({ total_canceladas: 0, con_motivo: 0 })
 
 const ESTADO_COLOR: Record<string, string> = {
-  pendiente: 'default', confirmada: 'success', en_proceso: 'info', completada: 'default',
+  pendiente:  'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+  confirmada: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+  en_proceso: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+  completada: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
 }
 const ESTADO_LABEL: Record<string, string> = {
   pendiente: 'Pendiente', confirmada: 'Confirmada', en_proceso: 'En proceso', completada: 'Completada',
@@ -122,7 +125,7 @@ onMounted(cargar)
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 flex-wrap mb-1">
                 <span class="font-semibold text-gray-900 dark:text-white">{{ c.mascota }}</span>
-                <BaseBadge :variant="ESTADO_COLOR[c.estado] as any" size="sm">{{ ESTADO_LABEL[c.estado] ?? c.estado }}</BaseBadge>
+                <BaseBadge :color="ESTADO_COLOR[c.estado]">{{ ESTADO_LABEL[c.estado] ?? c.estado }}</BaseBadge>
                 <span class="text-xs text-gray-400 capitalize">{{ c.tamano }}</span>
                 <span v-if="c.temperamento" class="text-xs text-gray-400">· {{ c.temperamento }}</span>
               </div>

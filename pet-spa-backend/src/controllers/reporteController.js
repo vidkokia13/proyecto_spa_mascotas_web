@@ -120,10 +120,18 @@ async function getCalificacion(req, res) {
   res.json({ calificacion: cal });
 }
 
+async function recomendaciones(req, res) {
+  const idMascota = req.params.id;
+  if (!idMascota) throw new AppError('id_mascota requerido.', 400, 'VALIDATION_ERROR');
+  const data = await repo.recomendacionesProductos(idMascota);
+  res.json(data);
+}
+
 module.exports = {
   ventas, ocupacion, nps,
   cronograma, reporteCancelaciones,
   productividad, misInsumos,
   historialClinico, misPromociones,
   crearCalificacion, getCalificacion,
+  recomendaciones,
 };

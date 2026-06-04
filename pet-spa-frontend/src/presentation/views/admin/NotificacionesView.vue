@@ -11,11 +11,28 @@ import type {
 
 // ── Estado ────────────────────────────────────────────────────────────────────
 
-const loading      = ref(false)
-const items        = ref<NotificacionEnviada[]>([])
-const total        = ref(0)
-const statsHoy     = ref<NotifStatItem[]>([])
+const loading        = ref(false)
+const errorMsg       = ref<string | null>(null)
+const items          = ref<NotificacionEnviada[]>([])
+const total          = ref(0)
+const statsHoy       = ref<NotifStatItem[]>([])
 const statsHistorico = ref<NotifStatItem[]>([])
+
+// Estado para prueba de email
+const probando     = ref(false)
+const resultadoPrueba = ref<{
+  ok: boolean
+  smtp: { ok: boolean; error: string | null; messageId: string | null }
+  db:   { ok: boolean; error: string | null; tablaExiste: boolean }
+} | null>(null)
+
+// Estado para verificación de stock
+const verificandoStock  = ref(false)
+const resultadoStock    = ref<{
+  ok: boolean; verificados: number; enviados: number; mensaje?: string
+  productos?: { nombre: string; stock: number; minimo: number }[]
+  error?: string
+} | null>(null)
 
 const fecha      = ref('')   // vacío = todas las fechas
 const filtroTipo = ref<TipoNotificacion | ''>('')
@@ -60,6 +77,7 @@ const totalHoy = computed(() => statsHoy.value.reduce((a, s) => a + s.total, 0))
 
 async function cargar() {
   loading.value = true
+  errorMsg.value = null
   try {
     const [lista, st] = await Promise.all([
       ds.fetchNotificaciones({
@@ -74,6 +92,10 @@ async function cargar() {
     total.value          = lista.total
     statsHoy.value       = st.hoy
     statsHistorico.value = st.historico
+  } catch (e: any) {
+    errorMsg.value = e.message?.includes('notificaciones_enviadas')
+      ? 'Tabla de notificaciones no existe. Ejecuta 16_pending_migrations.sql en la BD.'
+      : (e.message ?? 'Error al cargar notificaciones')
   } finally {
     loading.value = false
   }
@@ -90,6 +112,51 @@ watch([fecha, filtroTipo], () => { page.value = 0; cargar() })
 watch(page, cargar)
 
 onMounted(cargar)
+
+async function verificarStock() {
+  verificandoStock.value = true
+  resultadoStock.value = null
+  try {
+    const r = await ds.checkStock()
+    resultadoStock.value = r
+    if (r.enviados > 0) setTimeout(cargar, 800)
+  } catch (e: any) {
+    resultadoStock.value = { ok: false, verificados: 0, enviados: 0, error: e.message }
+  } finally {
+    verificandoStock.value = false
+  }
+}
+
+async function probarEnvio() {
+  probando.value = true
+  resultadoPrueba.value = null
+  try {
+    const r = await ds.probarEnvio()
+    resultadoPrueba.value = { ok: r.ok, ...r.resultado }
+    if (r.ok) setTimeout(cargar, 1000) // refrescar la lista si se insertó en DB
+  } catch (e: any) {
+    resultadoPrueba.value = {
+      ok: false,
+      smtp: { ok: false, error: e.message, messageId: null },
+      db:   { ok: false, error: null, tablaExiste: false },
+    }
+  } finally {
+    probando.value = false
+  }
+}
+
+// ── Helper para color del badge ───────────────────────────────────────────────
+
+function badgeColor(variant?: string): string {
+  const map: Record<string, string> = {
+    success: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+    error:   'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+    warning: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
+    info:    'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+    default: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+  }
+  return map[variant ?? 'default'] ?? map.default
+}
 
 // ── Formato fecha ─────────────────────────────────────────────────────────────
 
@@ -108,11 +175,54 @@ function fmtFecha(iso: string): string {
   <div class="p-6 space-y-6">
 
     <!-- Cabecera -->
-    <div>
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Notificaciones</h1>
-      <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-        Historial de emails enviados automáticamente por el sistema
-      </p>
+    <div class="flex items-start justify-between flex-wrap gap-3">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Notificaciones</h1>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+          Historial de emails enviados automáticamente por el sistema
+        </p>
+      </div>
+      <div class="flex gap-2">
+        <button
+          :disabled="verificandoStock"
+          class="px-3 py-2 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition"
+          @click="verificarStock"
+        >{{ verificandoStock ? 'Verificando...' : '📦 Verificar stock bajo' }}</button>
+        <button
+          :disabled="loading"
+          class="px-3 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg transition"
+          @click="cargar"
+        >↺ Actualizar</button>
+      </div>
+    </div>
+
+    <!-- Error de tabla -->
+    <div v-if="errorMsg" class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 text-sm text-red-700 dark:text-red-300">
+      ❌ {{ errorMsg }}
+    </div>
+
+    <!-- Resultado verificación de stock -->
+    <div v-if="resultadoStock" :class="[
+      'rounded-xl p-4 text-sm border',
+      resultadoStock.ok
+        ? 'bg-amber-50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300'
+        : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-700 dark:text-red-300',
+    ]">
+      <template v-if="resultadoStock.ok">
+        <p class="font-medium">
+          📦 Verificación completada — {{ resultadoStock.verificados }} productos con stock bajo,
+          {{ resultadoStock.enviados }} notificaciones enviadas
+        </p>
+        <p v-if="resultadoStock.mensaje" class="mt-1 text-xs opacity-75">{{ resultadoStock.mensaje }}</p>
+        <ul v-if="resultadoStock.productos?.length" class="mt-2 space-y-0.5">
+          <li v-for="p in resultadoStock.productos" :key="p.nombre" class="text-xs">
+            • <strong>{{ p.nombre }}</strong>: stock {{ p.stock }} / mínimo {{ p.minimo }}
+          </li>
+        </ul>
+      </template>
+      <template v-else>
+        ❌ {{ resultadoStock.error ?? 'Error al verificar stock' }}
+      </template>
     </div>
 
     <!-- Cards de estadísticas -->
@@ -219,10 +329,9 @@ function fmtFecha(iso: string): string {
                   <div class="flex items-center gap-2">
                     <span class="text-base">{{ TIPO_META[n.tipo]?.icon }}</span>
                     <div>
-                      <BaseBadge
-                        :variant="(TIPO_META[n.tipo]?.variant ?? 'default') as any"
-                        size="sm"
-                      >{{ TIPO_META[n.tipo]?.label ?? n.tipo }}</BaseBadge>
+                      <BaseBadge :color="badgeColor(TIPO_META[n.tipo]?.variant)">
+                        {{ TIPO_META[n.tipo]?.label ?? n.tipo }}
+                      </BaseBadge>
                       <p class="text-xs text-gray-400 mt-0.5">{{ TIPO_META[n.tipo]?.desc ?? '' }}</p>
                     </div>
                   </div>
@@ -283,6 +392,69 @@ function fmtFecha(iso: string): string {
           </div>
         </div>
       </template>
+    </BaseCard>
+
+    <!-- Prueba de envío -->
+    <BaseCard>
+      <div class="flex flex-col gap-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-gray-900 dark:text-white">Diagnóstico de notificaciones</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+              Envía un email de prueba a tu cuenta y verifica que la tabla de registro existe en la BD
+            </p>
+          </div>
+          <button
+            :disabled="probando"
+            class="px-4 py-2 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition"
+            @click="probarEnvio"
+          >
+            {{ probando ? 'Enviando...' : '🔔 Probar notificación' }}
+          </button>
+        </div>
+
+        <!-- Resultado -->
+        <div v-if="resultadoPrueba" class="space-y-2">
+          <!-- Banner global -->
+          <div
+            :class="[
+              'px-4 py-3 rounded-lg text-sm font-medium',
+              resultadoPrueba.ok
+                ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800'
+                : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800',
+            ]"
+          >
+            {{ resultadoPrueba.ok ? '✅ Todo funciona correctamente. Revisa tu bandeja en Mailtrap.' : '❌ Hay un problema. Revisa los detalles abajo.' }}
+          </div>
+
+          <!-- Detalle SMTP -->
+          <div class="grid grid-cols-2 gap-2">
+            <div :class="['p-3 rounded-lg border text-xs', resultadoPrueba.smtp.ok ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/10' : 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/10']">
+              <p class="font-medium mb-1">📧 SMTP (Mailtrap)</p>
+              <p v-if="resultadoPrueba.smtp.ok" class="text-green-600 dark:text-green-400">
+                ✓ Email enviado · ID: <span class="font-mono">{{ resultadoPrueba.smtp.messageId?.slice(-20) }}</span>
+              </p>
+              <p v-else class="text-red-600 dark:text-red-400 break-all">
+                ✗ Error: {{ resultadoPrueba.smtp.error }}
+              </p>
+            </div>
+            <div :class="['p-3 rounded-lg border text-xs', resultadoPrueba.db.tablaExiste ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/10' : 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/10']">
+              <p class="font-medium mb-1">🗄️ Base de datos</p>
+              <p v-if="resultadoPrueba.db.tablaExiste && resultadoPrueba.db.ok" class="text-green-600 dark:text-green-400">
+                ✓ Tabla existe · Registro guardado
+              </p>
+              <p v-else-if="resultadoPrueba.db.tablaExiste" class="text-amber-600 dark:text-amber-400">
+                ⚠ Tabla existe pero no se pudo insertar (email falló primero)
+              </p>
+              <p v-else class="text-red-600 dark:text-red-400 break-all">
+                ✗ Tabla no encontrada. Ejecuta: <code class="bg-red-100 dark:bg-red-900/30 px-1 rounded">13_notificaciones.sql</code>
+                <br v-if="resultadoPrueba.db.error" />
+                <span v-if="resultadoPrueba.db.error">{{ resultadoPrueba.db.error }}</span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
     </BaseCard>
 
     <!-- Info del scheduler -->

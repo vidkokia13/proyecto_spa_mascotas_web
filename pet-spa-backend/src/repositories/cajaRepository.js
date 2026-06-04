@@ -16,18 +16,22 @@ async function resumenDiario(fecha, client = db) {
     [fecha],
   );
 
-  // Totales pedidos (sin descuento)
-  const { rows: totalesPedidos } = await client.query(
-    `SELECT metodo,
-            COUNT(*)::int                    AS cantidad,
-            COALESCE(SUM(monto), 0)::numeric AS total_bruto,
-            0::numeric                       AS total_descuentos,
-            COALESCE(SUM(monto), 0)::numeric AS total
-     FROM pagos_pedidos
-     WHERE DATE(creado_en AT TIME ZONE 'America/Santiago') = $1
-     GROUP BY metodo`,
-    [fecha],
-  );
+  // Totales pedidos (sin descuento) — tabla puede no existir en instalaciones antiguas
+  let totalesPedidos = [];
+  try {
+    const { rows } = await client.query(
+      `SELECT metodo,
+              COUNT(*)::int                    AS cantidad,
+              COALESCE(SUM(monto), 0)::numeric AS total_bruto,
+              0::numeric                       AS total_descuentos,
+              COALESCE(SUM(monto), 0)::numeric AS total
+       FROM pagos_pedidos
+       WHERE DATE(creado_en AT TIME ZONE 'America/Santiago') = $1
+       GROUP BY metodo`,
+      [fecha],
+    );
+    totalesPedidos = rows;
+  } catch (_e) { /* tabla pagos_pedidos aún no existe */ }
 
   // Combinar totales por metodo en JS
   const map = {};
@@ -66,33 +70,37 @@ async function resumenDiario(fecha, client = db) {
     [fecha],
   );
 
-  // Pagos de pedidos del día
-  const { rows: pagosPedidos } = await client.query(
-    `SELECT
-       pp.id_pago,
-       pp.id_pedido,
-       pp.monto,
-       0::numeric          AS descuento,
-       pp.metodo,
-       pp.referencia,
-       pp.registrado_por,
-       pp.creado_en,
-       'pedido'            AS tipo,
-       ur.nombre           AS nombre_registrado_por,
-       NULL::text          AS id_cita,
-       NULL::text          AS id_promocion,
-       'Producto'          AS nombre_mascota,
-       'Venta tienda'      AS nombre_servicio,
-       uc2.nombre          AS nombre_cliente,
-       NULL::text          AS nombre_promocion
-     FROM pagos_pedidos pp
-     JOIN pedidos  ped ON ped.id_pedido  = pp.id_pedido
-     JOIN usuarios uc2 ON uc2.id_usuario = ped.id_usuario
-     LEFT JOIN usuarios ur ON ur.id_usuario = pp.registrado_por
-     WHERE DATE(pp.creado_en AT TIME ZONE 'America/Santiago') = $1
-     ORDER BY pp.creado_en`,
-    [fecha],
-  );
+  // Pagos de pedidos del día — tabla puede no existir en instalaciones antiguas
+  let pagosPedidos = [];
+  try {
+    const { rows } = await client.query(
+      `SELECT
+         pp.id_pago,
+         pp.id_pedido,
+         pp.monto,
+         0::numeric          AS descuento,
+         pp.metodo,
+         pp.referencia,
+         pp.registrado_por,
+         pp.creado_en,
+         'pedido'            AS tipo,
+         ur.nombre           AS nombre_registrado_por,
+         NULL::text          AS id_cita,
+         NULL::text          AS id_promocion,
+         'Producto'          AS nombre_mascota,
+         'Venta tienda'      AS nombre_servicio,
+         uc2.nombre          AS nombre_cliente,
+         NULL::text          AS nombre_promocion
+       FROM pagos_pedidos pp
+       JOIN pedidos  ped ON ped.id_pedido  = pp.id_pedido
+       JOIN usuarios uc2 ON uc2.id_usuario = ped.id_usuario
+       LEFT JOIN usuarios ur ON ur.id_usuario = pp.registrado_por
+       WHERE DATE(pp.creado_en AT TIME ZONE 'America/Santiago') = $1
+       ORDER BY pp.creado_en`,
+      [fecha],
+    );
+    pagosPedidos = rows;
+  } catch (_e) { /* tabla pagos_pedidos aún no existe */ }
 
   // Combinar y ordenar por fecha
   const pagos = [...pagosCitas, ...pagosPedidos]
