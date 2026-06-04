@@ -345,8 +345,13 @@ async function notificarRecordatorio2h({ email, nombreCliente, nombreMascota, no
 async function notificarBajoStock(producto, admins) {
   if (!admins || admins.length === 0) return;
   const emails = admins.map((a) => a.email).join(', ');
-  await sendMail({
-    to: emails,
+  const stockMinDisplay = producto.stock_minimo ?? producto.stock_minimo_efectivo ?? '—';
+
+  // Llamada directa al transporter (NO usa sendMail) para que los errores
+  // SMTP propaguen al llamador y no se marquen como "enviados" si fallaron.
+  const info = await getTransporter().sendMail({
+    from:    env.mail.from,
+    to:      emails,
     subject: `⚠️ Alerta stock bajo: ${producto.nombre} — Pet Spa`,
     html: emailLayout({
       title: 'Alerta de stock bajo',
@@ -354,21 +359,21 @@ async function notificarBajoStock(producto, admins) {
       body: `
         <h2 style="margin:0 0 8px;font-size:22px;color:#111827;">Alerta de stock bajo ⚠️</h2>
         <p style="margin:0 0 24px;font-size:15px;color:#6b7280;">Un producto ha alcanzado su nivel mínimo de inventario y requiere reabastecimiento.</p>
-        ${alertBadge('warning', `"${producto.nombre}" tiene solo <strong>${producto.stock} unidades</strong> disponibles (mínimo: ${producto.stock_minimo}).`)}
+        ${alertBadge('warning', `<strong>${producto.nombre}</strong> tiene solo <strong>${producto.stock} unidades</strong> disponibles (mínimo configurado: ${stockMinDisplay}).`)}
         ${infoTable(
           infoRow('Producto', producto.nombre) +
           infoRow('Stock actual', `<span style="color:#dc2626;font-weight:700;">${producto.stock} unidades</span>`) +
-          infoRow('Stock mínimo', `${producto.stock_minimo} unidades`) +
-          infoRow('Categoría', producto.categoria)
+          infoRow('Stock mínimo', `${stockMinDisplay} unidades`) +
+          infoRow('Categoría', producto.categoria ?? '—')
         )}
         <p style="margin:24px 0 0;font-size:14px;color:#6b7280;">
           Por favor realiza un pedido de reabastecimiento a la brevedad para evitar quiebres de stock.
         </p>
       `,
       footerNote: 'Alerta automática del sistema de inventario de Pet Spa. No respondas a este correo.',
-    })
-    // sin log — pedidoService ya llama notifRepo.marcarEnviada directamente
+    }),
   });
+  logger.info(`Alerta bajo stock enviada a ${emails}: ${info.messageId}`);
 }
 
 module.exports = {

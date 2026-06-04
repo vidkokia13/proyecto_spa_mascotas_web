@@ -208,20 +208,42 @@ function fmtFecha(iso: string): string {
         ? 'bg-amber-50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300'
         : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-700 dark:text-red-300',
     ]">
-      <template v-if="resultadoStock.ok">
-        <p class="font-medium">
-          📦 Verificación completada — {{ resultadoStock.verificados }} productos con stock bajo,
-          {{ resultadoStock.enviados }} notificaciones enviadas
+      <!-- Sin productos con stock bajo -->
+      <template v-if="resultadoStock.ok && resultadoStock.verificados === 0">
+        <p class="font-medium">✅ {{ resultadoStock.mensaje ?? 'No hay productos con stock bajo.' }}</p>
+      </template>
+
+      <!-- Resultados normales -->
+      <template v-else-if="resultadoStock.verificados > 0">
+        <p class="font-medium mb-2">
+          📦 {{ resultadoStock.verificados }} productos con stock bajo —
+          {{ resultadoStock.enviados }} notificación(es) enviada(s)
         </p>
-        <p v-if="resultadoStock.mensaje" class="mt-1 text-xs opacity-75">{{ resultadoStock.mensaje }}</p>
-        <ul v-if="resultadoStock.productos?.length" class="mt-2 space-y-0.5">
-          <li v-for="p in resultadoStock.productos" :key="p.nombre" class="text-xs">
-            • <strong>{{ p.nombre }}</strong>: stock {{ p.stock }} / mínimo {{ p.minimo }}
+        <ul class="space-y-1">
+          <li v-for="p in resultadoStock.productos" :key="p.nombre" class="text-xs flex items-center gap-2">
+            <span :class="[
+              'inline-block w-2 h-2 rounded-full flex-shrink-0',
+              p.stock === 0 ? 'bg-red-500' : 'bg-amber-500'
+            ]" />
+            <strong>{{ p.nombre }}</strong>
+            <span class="opacity-75">stock: {{ p.stock }} / mínimo: {{ p.minimo }}</span>
           </li>
         </ul>
+        <!-- Errores SMTP si los hay -->
+        <div v-if="resultadoStock.errores?.length" class="mt-3 pt-3 border-t border-red-200 dark:border-red-700">
+          <p class="font-medium text-red-700 dark:text-red-300 mb-1">⚠️ Errores al enviar:</p>
+          <ul class="space-y-0.5">
+            <li v-for="e in resultadoStock.errores" :key="e.producto" class="text-xs text-red-600 dark:text-red-400">
+              {{ e.producto }}: {{ e.error }}
+            </li>
+          </ul>
+          <p class="text-xs mt-2 opacity-75">Revisa la configuración SMTP en el archivo .env del servidor.</p>
+        </div>
       </template>
+
+      <!-- Error de admins no encontrados u otro error -->
       <template v-else>
-        ❌ {{ resultadoStock.error ?? 'Error al verificar stock' }}
+        <p class="font-medium">❌ {{ resultadoStock.mensaje ?? resultadoStock.error ?? 'Error al verificar stock' }}</p>
       </template>
     </div>
 

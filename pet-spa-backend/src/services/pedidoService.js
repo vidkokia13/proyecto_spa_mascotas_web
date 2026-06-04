@@ -15,13 +15,17 @@ async function notificarBajoStockAsync(productos) {
     for (const p of productos) {
       const yaNotificado = await notifRepo.bajoStockReciente(p.id_producto);
       if (yaNotificado) continue;
-      await notifSvc.notificarBajoStock(p, admins);
-      for (const admin of admins) {
-        await notifRepo.marcarEnviada('bajo_stock', String(p.id_producto), admin.email);
+      try {
+        await notifSvc.notificarBajoStock(p, admins);
+        // Solo marcar si el email se envió exitosamente
+        await notifRepo.marcarEnviada('bajo_stock', String(p.id_producto), admins.map(a => a.email).join(', '));
+        logger.info(`Alerta bajo stock enviada para: ${p.nombre}`);
+      } catch (err) {
+        logger.error(`Error notif bajo stock ${p.nombre}`, { error: err.message });
       }
     }
   } catch (err) {
-    logger.error('Error notificando bajo stock', { error: err.message });
+    logger.error('Error en notificarBajoStockAsync', { error: err.message });
   }
 }
 

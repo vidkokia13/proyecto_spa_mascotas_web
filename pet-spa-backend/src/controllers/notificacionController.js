@@ -1,6 +1,7 @@
 'use strict';
 
 const db          = require('../config/db');
+const logger      = require('../config/logger');
 const notifRepo   = require('../repositories/notificacionRepository');
 const notifSvc    = require('../services/notificationService');
 
@@ -106,10 +107,13 @@ async function checkStock(req, res) {
 
   let productosLow = [];
   try {
+    // COALESCE(stock_minimo, 5): productos sin stock_minimo configurado usan 5 como umbral por defecto
     const { rows } = await db.query(
-      `SELECT id_producto, nombre, stock, stock_minimo, categoria
+      `SELECT id_producto, nombre, stock,
+              COALESCE(stock_minimo, 5) AS stock_minimo_efectivo, stock_minimo, categoria
        FROM productos
-       WHERE activo = true AND stock <= stock_minimo
+       WHERE activo = true
+         AND stock <= COALESCE(stock_minimo, 5)
        ORDER BY stock ASC`,
     );
     productosLow = rows;
@@ -118,26 +122,51 @@ async function checkStock(req, res) {
   }
 
   if (productosLow.length === 0) {
-    return res.json({ ok: true, verificados: 0, enviados: 0, mensaje: 'No hay productos con stock bajo.' });
+    return res.json({ ok: true, verificados: 0, enviados: 0, mensaje: 'No hay productos con stock bajo actualmente.' });
   }
 
   const admins = await notifRepo.getAdminEmails();
+
+  if (admins.length === 0) {
+    return res.json({
+      ok: false,
+      verificados: productosLow.length,
+      enviados: 0,
+      mensaje: 'No se encontraron usuarios admin/jefe activos para notificar. Verifica que existan y estén activos.',
+    });
+  }
+
   let enviados = 0;
+  const errores = [];
 
   for (const p of productosLow) {
     const yaReciente = await notifRepo.bajoStockReciente(p.id_producto);
     if (yaReciente) continue;
-    await notifSvc.notificarBajoStock(p, admins);
-    await notifRepo.marcarEnviada('bajo_stock', String(p.id_producto), admins.map(a => a.email).join(', '));
-    enviados++;
+
+    try {
+      await notifSvc.notificarBajoStock(p, admins);
+      // Solo marcar como enviado si el email realmente llegó (notificarBajoStock lanza si falla)
+      await notifRepo.marcarEnviada('bajo_stock', String(p.id_producto), admins.map(a => a.email).join(', '));
+      enviados++;
+    } catch (err) {
+      logger.error(`checkStock: error enviando notif para ${p.nombre}`, { error: err.message });
+      errores.push({ producto: p.nombre, error: err.message });
+    }
   }
 
-  res.json({
-    ok: true,
+  const response = {
+    ok: errores.length === 0,
     verificados: productosLow.length,
     enviados,
-    productos: productosLow.map(p => ({ nombre: p.nombre, stock: p.stock, minimo: p.stock_minimo })),
-  });
+    productos: productosLow.map(p => ({
+      nombre: p.nombre,
+      stock:  p.stock,
+      minimo: p.stock_minimo_efectivo,
+    })),
+  };
+  if (errores.length > 0) response.errores = errores;
+
+  res.json(response);
 }
 
 module.exports = { listar, stats, probar, checkStock };
