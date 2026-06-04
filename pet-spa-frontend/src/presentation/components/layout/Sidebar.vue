@@ -77,9 +77,10 @@ const navGroups = computed<NavGroup[]>(() => {
           { name: ROUTE_NAMES.AGENDA_CITAS,         route: '/agenda/citas',         icon: 'calendar',      label: 'Agenda'       },
           { name: ROUTE_NAMES.AGENDA_BLOQUEOS,      route: '/agenda/bloqueos',      icon: 'block',         label: 'Bloqueos'     },
           { name: ROUTE_NAMES.ADMIN_CAJA,           route: '/admin/caja',           icon: 'cash',          label: 'Caja'         },
-          { name: ROUTE_NAMES.RECEPCION_PEDIDOS,    route: '/recepcion/pedidos',    icon: 'shop',    label: 'Pedidos'   },
-          { name: ROUTE_NAMES.RECEPCION_REPORTES,   route: '/recepcion/reportes',   icon: 'report',  label: 'Reportes'  },
-          { name: ROUTE_NAMES.CHANGE_PASSWORD,       route: '/change-password',      icon: 'lock',    label: 'Seguridad' },
+          { name: ROUTE_NAMES.RECEPCION_PEDIDOS,    route: '/recepcion/pedidos',    icon: 'shop',          label: 'Pedidos'      },
+          { name: ROUTE_NAMES.RECEPCION_REPORTES,   route: '/recepcion/reportes',   icon: 'report',        label: 'Reportes'     },
+          { name: ROUTE_NAMES.ADMIN_2FA_SETUP,      route: '/admin/2fa-setup',      icon: 'lock-2fa',      label: 'Seguridad 2FA'},
+          { name: ROUTE_NAMES.CHANGE_PASSWORD,      route: '/change-password',      icon: 'lock',          label: 'Contraseña'   },
         ],
       },
     ]
@@ -93,7 +94,8 @@ const navGroups = computed<NavGroup[]>(() => {
           { name: ROUTE_NAMES.AGENDA_CALENDARIO,   route: '/agenda/calendario',   icon: 'calendar-grid', label: 'Calendario'        },
           { name: ROUTE_NAMES.AGENDA_CITAS,        route: '/agenda/citas',        icon: 'calendar',      label: 'Agenda'            },
           { name: ROUTE_NAMES.EMPLOYEE_REPORTES,   route: '/employee/reportes',   icon: 'report',        label: 'Mis reportes'      },
-          { name: ROUTE_NAMES.CHANGE_PASSWORD,     route: '/change-password',     icon: 'lock',          label: 'Cambiar contraseña'},
+          { name: ROUTE_NAMES.ADMIN_2FA_SETUP,     route: '/admin/2fa-setup',     icon: 'lock-2fa',      label: 'Seguridad 2FA'     },
+          { name: ROUTE_NAMES.CHANGE_PASSWORD,     route: '/change-password',     icon: 'lock',          label: 'Contraseña'        },
         ],
       },
     ]

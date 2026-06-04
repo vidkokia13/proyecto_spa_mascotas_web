@@ -228,15 +228,15 @@ function fmtFecha(iso: string): string {
     <!-- Cards de estadísticas -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
       <!-- Total -->
-      <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 flex flex-col gap-1">
+      <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 flex flex-col gap-2">
         <span class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Total registradas</span>
         <span class="text-3xl font-bold text-gray-900 dark:text-white">{{ statsHistorico.reduce((a,s)=>a+s.total,0) }}</span>
         <span class="text-xs text-gray-400">{{ fecha || 'Todas las fechas' }}</span>
       </div>
 
       <!-- Citas confirmadas/completadas -->
-      <div class="bg-green-50 dark:bg-green-900/20 rounded-2xl border border-green-100 dark:border-green-800 p-4 flex flex-col gap-1">
-        <div class="flex items-center gap-1">
+      <div class="bg-green-50 dark:bg-green-900/20 rounded-2xl border border-green-100 dark:border-green-800 p-5 flex flex-col gap-2">
+        <div class="flex items-center gap-1.5">
           <span class="text-base">✅🐾</span>
           <span class="text-xs font-medium text-green-700 dark:text-green-300 uppercase tracking-wide">Citas</span>
         </div>
@@ -247,8 +247,8 @@ function fmtFecha(iso: string): string {
       </div>
 
       <!-- Cancelaciones -->
-      <div class="bg-red-50 dark:bg-red-900/20 rounded-2xl border border-red-100 dark:border-red-800 p-4 flex flex-col gap-1">
-        <div class="flex items-center gap-1">
+      <div class="bg-red-50 dark:bg-red-900/20 rounded-2xl border border-red-100 dark:border-red-800 p-5 flex flex-col gap-2">
+        <div class="flex items-center gap-1.5">
           <span class="text-base">❌🚫</span>
           <span class="text-xs font-medium text-red-700 dark:text-red-300 uppercase tracking-wide">Canceladas</span>
         </div>
@@ -259,8 +259,8 @@ function fmtFecha(iso: string): string {
       </div>
 
       <!-- Recordatorios + bajo stock -->
-      <div class="bg-amber-50 dark:bg-amber-900/20 rounded-2xl border border-amber-100 dark:border-amber-800 p-4 flex flex-col gap-1">
-        <div class="flex items-center gap-1">
+      <div class="bg-amber-50 dark:bg-amber-900/20 rounded-2xl border border-amber-100 dark:border-amber-800 p-5 flex flex-col gap-2">
+        <div class="flex items-center gap-1.5">
           <span class="text-base">⏰📦</span>
           <span class="text-xs font-medium text-amber-700 dark:text-amber-300 uppercase tracking-wide">Automáticas</span>
         </div>

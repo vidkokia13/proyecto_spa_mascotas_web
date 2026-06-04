@@ -56,19 +56,24 @@ onMounted(() => loadRango({ fechaInicio: today, fechaFin: tomorrow }))
 
     <div v-else class="space-y-3">
       <BaseCard v-for="c in store.citas" :key="c.id_cita">
-        <div class="flex items-center gap-4 flex-wrap">
-          <div class="w-16 text-center">
-            <p class="text-lg font-bold text-primary-600 dark:text-primary-400">{{ formatHora(c.fecha_hora_inicio) }}</p>
-            <p class="text-xs text-gray-400">{{ c.duracion_ajustada }} min</p>
+        <div class="flex items-center gap-5 flex-wrap">
+          <!-- Hora -->
+          <div class="w-16 text-center flex-shrink-0">
+            <p class="text-lg font-bold text-primary-600 dark:text-primary-400 leading-tight">{{ formatHora(c.fecha_hora_inicio) }}</p>
+            <p class="text-xs text-gray-400 mt-0.5">{{ c.duracion_ajustada }} min</p>
           </div>
+          <!-- Divider -->
+          <div class="w-px h-10 bg-gray-200 dark:bg-gray-700 flex-shrink-0 hidden sm:block" />
+          <!-- Info -->
           <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-2 mb-0.5 flex-wrap">
-              <span class="font-medium text-gray-900 dark:text-white">{{ c.nombre_cliente }}</span>
+            <div class="flex items-center gap-2 mb-1 flex-wrap">
+              <span class="font-semibold text-gray-900 dark:text-white">{{ c.nombre_cliente }}</span>
               <BaseBadge :color="ESTADO_COLOR[c.estado]">{{ ESTADO_LABEL[c.estado] }}</BaseBadge>
             </div>
-            <p class="text-sm text-gray-500">
-              {{ c.nombre_mascota }} · {{ c.nombre_servicio }}
-              <span v-if="c.nombre_trabajador"> · {{ c.nombre_trabajador }}</span>
+            <p class="text-sm text-gray-500 dark:text-gray-400">
+              <span class="font-medium text-gray-700 dark:text-gray-300">{{ c.nombre_mascota }}</span>
+              · {{ c.nombre_servicio }}
+              <span v-if="c.nombre_trabajador" class="text-gray-400"> · {{ c.nombre_trabajador }}</span>
             </p>
           </div>
         </div>

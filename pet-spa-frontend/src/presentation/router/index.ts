@@ -73,7 +73,7 @@ const router = createRouter({
           name: ROUTE_NAMES.ADMIN_2FA_SETUP,
           component: () => import('@/presentation/views/admin/TwoFactorSetupView.vue'),
           meta: { requiresAuth: true, layout: 'dashboard' },
-          beforeEnter: roleGuard([ROLES.ADMIN, ROLES.JEFE]),
+          beforeEnter: roleGuard([ROLES.ADMIN, ROLES.JEFE, ROLES.RECEPCION, ROLES.TRABAJADOR]),
         },
         {
           path: 'servicios',
