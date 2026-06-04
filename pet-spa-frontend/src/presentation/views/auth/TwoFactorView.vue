@@ -12,6 +12,7 @@ const router    = useRouter()
 const code    = ref('')
 const error   = ref('')
 const loading = ref(false)
+const expired = ref(false)
 
 onMounted(() => {
   if (!authStore.twoFactorToken) {
@@ -22,15 +23,29 @@ onMounted(() => {
 async function submit() {
   if (code.value.length !== 6 || loading.value) return
   error.value   = ''
+  expired.value = false
   loading.value = true
   try {
     await authStore.completeTwoFactor(code.value)
   } catch (e: unknown) {
-    error.value = (e as { message?: string })?.message ?? 'Código incorrecto.'
-    code.value  = ''
+    const msg = (e as { message?: string })?.message ?? 'Código incorrecto.'
+    error.value = msg
+    if (msg.toLowerCase().includes('expir') || msg.toLowerCase().includes('inv')) {
+      expired.value = true
+    } else {
+      code.value = ''
+    }
   } finally {
     loading.value = false
   }
+}
+
+function reiniciar() {
+  error.value   = ''
+  expired.value = false
+  code.value    = ''
+  authStore.clearTwoFactor()
+  router.replace({ name: ROUTE_NAMES.LOGIN })
 }
 </script>
 
@@ -51,7 +66,19 @@ async function submit() {
       </div>
 
       <BaseCard>
-        <form class="space-y-4" @submit.prevent="submit">
+        <!-- Error de challenge expirado → mostrar opción de reiniciar -->
+        <div v-if="expired" class="space-y-4">
+          <div class="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg text-sm text-amber-700 dark:text-amber-400">
+            <p class="font-medium mb-1">⏱ Sesión expirada</p>
+            <p>{{ error }}</p>
+          </div>
+          <BaseButton full-width @click="reiniciar">
+            Volver al inicio de sesión
+          </BaseButton>
+        </div>
+
+        <!-- Formulario normal -->
+        <form v-else class="space-y-4" @submit.prevent="submit">
           <div v-if="error" class="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-700 dark:text-red-400">
             {{ error }}
           </div>
@@ -68,6 +95,9 @@ async function submit() {
               class="block w-full text-center text-2xl tracking-widest rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500"
               :disabled="loading"
             />
+            <p class="text-xs text-gray-400 dark:text-gray-500 mt-1.5 text-center">
+              Abrí Google Authenticator o Authy y usá el código actual
+            </p>
           </div>
 
           <BaseButton
@@ -80,10 +110,13 @@ async function submit() {
           </BaseButton>
         </form>
 
-        <p class="text-center text-sm text-gray-500 dark:text-gray-400 mt-4">
-          <RouterLink :to="{ name: 'login' }" class="text-primary-600 dark:text-primary-400 hover:underline">
+        <p v-if="!expired" class="text-center text-sm text-gray-500 dark:text-gray-400 mt-4">
+          <button
+            class="text-primary-600 dark:text-primary-400 hover:underline"
+            @click="reiniciar"
+          >
             Volver al inicio de sesión
-          </RouterLink>
+          </button>
         </p>
       </BaseCard>
     </div>

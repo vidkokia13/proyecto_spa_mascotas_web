@@ -190,7 +190,7 @@ async function login(payload, ctx = {}) {
     const twoFaToken = jwt.sign(
       { id_usuario: user.id_usuario, purpose: '2fa_challenge' },
       env.jwt.secret,
-      { expiresIn: '5m' },
+      { expiresIn: '15m' },
     );
     return { requires_2fa: true, two_factor_token: twoFaToken };
   }
@@ -220,12 +220,16 @@ async function verifyLogin2FA(twoFaToken, code, ctx = {}) {
   let decoded;
   try {
     decoded = jwt.verify(twoFaToken, env.jwt.secret);
-  } catch {
-    throw new AppError('Sesión 2FA expirada. Volvé a iniciar sesión.', 401, 'INVALID_TOKEN');
+  } catch (err) {
+    // 400 en lugar de 401: el interceptor axios no hace hard-redirect en 400
+    const msg = err?.name === 'TokenExpiredError'
+      ? 'La sesión 2FA expiró. Volvé a iniciar sesión.'
+      : 'Token 2FA inválido. Volvé a iniciar sesión.';
+    throw new AppError(msg, 400, 'TWO_FA_EXPIRED');
   }
 
   if (decoded.purpose !== '2fa_challenge') {
-    throw new AppError('Token inválido.', 401, 'INVALID_TOKEN');
+    throw new AppError('Token inválido.', 400, 'INVALID_TOKEN');
   }
 
   const user = await userRepo.findById(decoded.id_usuario);
@@ -233,14 +237,15 @@ async function verifyLogin2FA(twoFaToken, code, ctx = {}) {
     throw new AppError('Usuario no encontrado o 2FA no configurado.', 400, 'INVALID_REQUEST');
   }
 
+  // window: 2 → tolera hasta ±60s de diferencia entre el reloj del servidor y el del teléfono
   const valid = speakeasy.totp.verify({
     secret: user.two_factor_secret,
     encoding: 'base32',
     token: code,
-    window: 1,
+    window: 2,
   });
   if (!valid) {
-    throw new AppError('Código 2FA incorrecto.', 400, 'INVALID_2FA_CODE');
+    throw new AppError('Código 2FA incorrecto. Verificá que el reloj de tu teléfono sea correcto.', 400, 'INVALID_2FA_CODE');
   }
 
   const profile = await userRepo.findByIdWithProfile(decoded.id_usuario);

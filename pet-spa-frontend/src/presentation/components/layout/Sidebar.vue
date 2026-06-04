@@ -32,10 +32,12 @@ const navGroups = computed<NavGroup[]>(() => {
       {
         label: 'Administración',
         items: [
-          { name: ROUTE_NAMES.ADMIN_DASHBOARD, route: '/admin/dashboard', icon: 'chart',    label: 'Dashboard'  },
-          { name: ROUTE_NAMES.ADMIN_USERS,     route: '/admin/users',     icon: 'users',    label: 'Usuarios'   },
-          { name: ROUTE_NAMES.ADMIN_LOGS,      route: '/admin/logs',      icon: 'shield',   label: 'Logs'       },
-          { name: ROUTE_NAMES.ADMIN_2FA_SETUP, route: '/admin/2fa-setup', icon: 'lock-2fa', label: 'Seguridad'  },
+          { name: ROUTE_NAMES.ADMIN_DASHBOARD,      route: '/admin/dashboard',      icon: 'chart',    label: 'Dashboard'        },
+          { name: ROUTE_NAMES.ADMIN_USERS,         route: '/admin/users',         icon: 'users',    label: 'Usuarios'         },
+          { name: ROUTE_NAMES.ADMIN_LOGS,          route: '/admin/logs',          icon: 'shield',   label: 'Logs'             },
+          { name: ROUTE_NAMES.ADMIN_2FA_SETUP,     route: '/admin/2fa-setup',     icon: 'lock-2fa', label: 'Seguridad'        },
+          { name: ROUTE_NAMES.ADMIN_NOTIFICACIONES, route: '/admin/notificaciones', icon: 'bell',    label: 'Notificaciones'  },
+          { name: ROUTE_NAMES.ADMIN_REPORTES,      route: '/admin/reportes',       icon: 'report',  label: 'Reportes'        },
         ],
       },
       {
@@ -51,9 +53,10 @@ const navGroups = computed<NavGroup[]>(() => {
       {
         label: 'Catálogo',
         items: [
-          { name: ROUTE_NAMES.ADMIN_SERVICIOS,   route: '/admin/servicios',   icon: 'tag',           label: 'Servicios'  },
-          { name: ROUTE_NAMES.ADMIN_INSUMOS,     route: '/admin/insumos',     icon: 'box',           label: 'Insumos'    },
-          { name: ROUTE_NAMES.ADMIN_PROMOCIONES, route: '/admin/promociones', icon: 'promo',         label: 'Promociones' },
+          { name: ROUTE_NAMES.ADMIN_SERVICIOS,   route: '/admin/servicios',   icon: 'tag',      label: 'Servicios'   },
+          { name: ROUTE_NAMES.ADMIN_INSUMOS,     route: '/admin/insumos',     icon: 'box',      label: 'Insumos'     },
+          { name: ROUTE_NAMES.ADMIN_PROMOCIONES, route: '/admin/promociones', icon: 'promo',    label: 'Promociones' },
+          { name: ROUTE_NAMES.ADMIN_PRODUCTOS,   route: '/admin/productos',   icon: 'shop',     label: 'Productos'   },
         ],
       },
       {
@@ -74,7 +77,10 @@ const navGroups = computed<NavGroup[]>(() => {
           { name: ROUTE_NAMES.AGENDA_CITAS,         route: '/agenda/citas',         icon: 'calendar',      label: 'Agenda'       },
           { name: ROUTE_NAMES.AGENDA_BLOQUEOS,      route: '/agenda/bloqueos',      icon: 'block',         label: 'Bloqueos'     },
           { name: ROUTE_NAMES.ADMIN_CAJA,           route: '/admin/caja',           icon: 'cash',          label: 'Caja'         },
-          { name: ROUTE_NAMES.CHANGE_PASSWORD,      route: '/change-password',      icon: 'lock',          label: 'Seguridad'    },
+          { name: ROUTE_NAMES.RECEPCION_PEDIDOS,    route: '/recepcion/pedidos',    icon: 'shop',          label: 'Pedidos'      },
+          { name: ROUTE_NAMES.RECEPCION_REPORTES,   route: '/recepcion/reportes',   icon: 'report',        label: 'Reportes'     },
+          { name: ROUTE_NAMES.ADMIN_2FA_SETUP,      route: '/admin/2fa-setup',      icon: 'lock-2fa',      label: 'Seguridad 2FA'},
+          { name: ROUTE_NAMES.CHANGE_PASSWORD,      route: '/change-password',      icon: 'lock',          label: 'Contraseña'   },
         ],
       },
     ]
@@ -84,10 +90,12 @@ const navGroups = computed<NavGroup[]>(() => {
     return [
       {
         items: [
-          { name: ROUTE_NAMES.EMPLOYEE_DASHBOARD,  route: '/employee/dashboard',  icon: 'home',          label: 'Panel'            },
-          { name: ROUTE_NAMES.AGENDA_CALENDARIO,   route: '/agenda/calendario',   icon: 'calendar-grid', label: 'Calendario'       },
-          { name: ROUTE_NAMES.AGENDA_CITAS,        route: '/agenda/citas',        icon: 'calendar',      label: 'Agenda'           },
-          { name: ROUTE_NAMES.CHANGE_PASSWORD,     route: '/change-password',     icon: 'lock',          label: 'Cambiar contraseña'},
+          { name: ROUTE_NAMES.EMPLOYEE_DASHBOARD,  route: '/employee/dashboard',  icon: 'home',          label: 'Panel'             },
+          { name: ROUTE_NAMES.AGENDA_CALENDARIO,   route: '/agenda/calendario',   icon: 'calendar-grid', label: 'Calendario'        },
+          { name: ROUTE_NAMES.AGENDA_CITAS,        route: '/agenda/citas',        icon: 'calendar',      label: 'Agenda'            },
+          { name: ROUTE_NAMES.EMPLOYEE_REPORTES,   route: '/employee/reportes',   icon: 'report',        label: 'Mis reportes'      },
+          { name: ROUTE_NAMES.ADMIN_2FA_SETUP,     route: '/admin/2fa-setup',     icon: 'lock-2fa',      label: 'Seguridad 2FA'     },
+          { name: ROUTE_NAMES.CHANGE_PASSWORD,     route: '/change-password',     icon: 'lock',          label: 'Contraseña'        },
         ],
       },
     ]
@@ -100,7 +108,11 @@ const navGroups = computed<NavGroup[]>(() => {
         { name: ROUTE_NAMES.CLIENT_MASCOTAS,   route: '/client/mascotas',   icon: 'pet',      label: 'Mis mascotas' },
         { name: ROUTE_NAMES.CLIENT_CITAS,      route: '/client/citas',      icon: 'calendar', label: 'Mis citas'    },
         { name: ROUTE_NAMES.CLIENT_NUEVA_CITA, route: '/client/nueva-cita', icon: 'plus',     label: 'Nueva cita'   },
-        { name: ROUTE_NAMES.CLIENT_PROFILE,    route: '/client/profile',    icon: 'user',     label: 'Mi perfil'    },
+        { name: ROUTE_NAMES.CLIENT_TIENDA,          route: '/client/tienda',         icon: 'shop',    label: 'Tienda'        },
+        { name: ROUTE_NAMES.CLIENT_CARRITO,         route: '/client/carrito',        icon: 'cart',    label: 'Carrito'       },
+        { name: ROUTE_NAMES.CLIENT_HISTORIAL,       route: '/client/historial',      icon: 'report',  label: 'Historial'     },
+        { name: ROUTE_NAMES.CLIENT_MIS_PROMOCIONES, route: '/client/mis-promociones',icon: 'promo',   label: 'Promociones'   },
+        { name: ROUTE_NAMES.CLIENT_PROFILE,         route: '/client/profile',        icon: 'user',    label: 'Mi perfil'     },
       ],
     },
   ]
@@ -211,6 +223,22 @@ const navGroups = computed<NavGroup[]>(() => {
             <!-- cash (caja) -->
             <svg v-else-if="item.icon === 'cash'" class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+            <!-- shop (tienda/productos) -->
+            <svg v-else-if="item.icon === 'shop'" class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+            </svg>
+            <!-- cart -->
+            <svg v-else-if="item.icon === 'cart'" class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+            <!-- report (reportes) -->
+            <svg v-else-if="item.icon === 'report'" class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <!-- bell (notificaciones) -->
+            <svg v-else-if="item.icon === 'bell'" class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
             </svg>
             <!-- user (fallback) -->
             <svg v-else class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">

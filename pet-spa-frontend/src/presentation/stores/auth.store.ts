@@ -80,12 +80,15 @@ export const useAuthStore = defineStore('auth', () => {
 
       if (res.force_password_change) {
         mustChangePassword.value = true
-        await router.push({ name: ROUTE_NAMES.CHANGE_PASSWORD })
+        // Hard redirect para evitar conflictos de layout al cambiar de contexto auth→dashboard
+        window.location.href = '/change-password'
         return
       }
 
       mustChangePassword.value = false
-      _redirectByRole(res.user.rol)
+      // Hard redirect post-2FA: evita el problema de timing entre layout auth/dashboard
+      // cuando el router intenta navegar mientras el layout todavía está en modo auth
+      window.location.href = _pathForRole(res.user.rol)
     } catch (e) {
       error.value = extractErrorMessage(e)
       throw e
@@ -141,6 +144,17 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null
   }
 
+  function clearTwoFactor(): void {
+    twoFactorToken.value = null
+  }
+
+  function _pathForRole(role: string): string {
+    if (role === 'admin' || role === 'jefe') return '/admin/dashboard'
+    if (role === 'trabajador') return '/employee/dashboard'
+    if (role === 'recepcion')  return '/recepcion/dashboard'
+    return '/client/mascotas'
+  }
+
   function _redirectByRole(role: string): void {
     if (role === 'admin' || role === 'jefe') {
       router.push({ name: ROUTE_NAMES.ADMIN_DASHBOARD })
@@ -157,6 +171,6 @@ export const useAuthStore = defineStore('auth', () => {
     token, user, profile, loading, error,
     mustChangePassword, twoFactorToken,
     isAuthenticated, userRole, isAdmin, isWorker, isClient, permissions,
-    login, completeTwoFactor, register, fetchProfile, logout, clearError,
+    login, completeTwoFactor, register, fetchProfile, logout, clearError, clearTwoFactor,
   }
 })

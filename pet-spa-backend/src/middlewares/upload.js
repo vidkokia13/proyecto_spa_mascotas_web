@@ -47,4 +47,34 @@ const uploadCarnet = multer({
   fileFilter: imageOrPdfFilter,
 });
 
-module.exports = { upload, uploadCarnet };
+// ── Fotos de perfil de mascota ────────────────────────────────────────────────
+const mascotaStorage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder:        'pet-spa/mascotas',
+    resource_type: 'image',
+  },
+});
+
+const uploadMascota = multer({
+  storage:    mascotaStorage,
+  limits:     { fileSize: 5 * 1024 * 1024 },
+  fileFilter: imageFilter,
+});
+
+// ── Imágenes de productos ─────────────────────────────────────────────────────
+const productosStorage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder:        'pet-spa/productos',
+    resource_type: 'image',
+  },
+});
+
+const uploadProducto = multer({
+  storage:    productosStorage,
+  limits:     { fileSize: 5 * 1024 * 1024 },
+  fileFilter: imageFilter,
+});
+
+module.exports = { upload, uploadCarnet, uploadMascota, uploadProducto };

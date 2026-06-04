@@ -8,6 +8,7 @@ import BaseBadge from '@/presentation/components/ui/BaseBadge.vue'
 import BaseModal from '@/presentation/components/ui/BaseModal.vue'
 import { ROUTE_NAMES } from '@/shared/constants/routes'
 import type { Cita, CancelarCitaPayload } from '@/shared/types/agenda.types'
+import { crearCalificacion } from '@/data/datasources/ReporteDatasource'
 
 const router = useRouter()
 const { store, loadMisCitas, cancelarCita } = useCitas()
@@ -78,6 +79,26 @@ function esCancelable(c: Cita) {
 }
 
 onMounted(() => loadMisCitas())
+
+// ── Calificación rápida ───────────────────────────────────────────────────────
+const calTarget     = ref<Cita | null>(null)
+const calPuntuacion = ref(0)
+const calComentario = ref('')
+const calOk         = ref(false)
+
+function abrirCalificar(c: Cita) {
+  calTarget.value     = c
+  calPuntuacion.value = 0
+  calComentario.value = ''
+  calOk.value         = false
+}
+
+async function confirmarCal() {
+  if (!calTarget.value || !calPuntuacion.value) return
+  await crearCalificacion({ id_cita: calTarget.value.id_cita, puntuacion: calPuntuacion.value, comentario: calComentario.value || undefined })
+  calOk.value = true
+  setTimeout(() => { calTarget.value = null }, 1400)
+}
 </script>
 
 <template>
@@ -122,13 +143,20 @@ onMounted(() => loadMisCitas())
             </p>
           </div>
 
-          <div class="flex gap-2 flex-shrink-0">
+          <div class="flex flex-wrap gap-2 flex-shrink-0">
             <BaseButton
               v-if="c.estado === 'completada'"
               variant="secondary" size="sm"
               @click="router.push({ name: ROUTE_NAMES.CLIENT_RESUMEN_CITA, params: { id: c.id_cita } })"
             >
               Ver resumen
+            </BaseButton>
+            <BaseButton
+              v-if="c.estado === 'completada'"
+              variant="ghost" size="sm"
+              @click="abrirCalificar(c)"
+            >
+              ★ Calificar
             </BaseButton>
             <BaseButton v-if="esCancelable(c)" variant="danger" size="sm" :disabled="store.loading" @click="openCancelar(c)">
               Cancelar
@@ -221,6 +249,35 @@ onMounted(() => loadMisCitas())
           >
             {{ store.loading ? 'Cancelando…' : 'Confirmar cancelación' }}
           </BaseButton>
+        </div>
+      </div>
+    </BaseModal>
+
+    <!-- Modal calificación rápida -->
+    <BaseModal :open="!!calTarget" title="Calificar servicio" @close="calTarget = null">
+      <div v-if="calTarget" class="space-y-4">
+        <p class="text-sm text-gray-600 dark:text-gray-400">
+          <strong>{{ calTarget.nombre_servicio }}</strong> · {{ calTarget.nombre_mascota }}
+        </p>
+        <div>
+          <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Puntuación *</p>
+          <div class="flex gap-2">
+            <button
+              v-for="i in 5" :key="i"
+              :class="['text-3xl transition-transform hover:scale-110', i <= calPuntuacion ? 'text-amber-400' : 'text-gray-200 dark:text-gray-600']"
+              @click="calPuntuacion = i"
+            >★</button>
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Comentario (opcional)</label>
+          <textarea v-model="calComentario" rows="2" placeholder="¿Cómo fue la experiencia?"
+            class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+        </div>
+        <div v-if="calOk" class="text-center text-green-600 dark:text-green-400 font-medium py-1">¡Gracias por calificar! 🐾</div>
+        <div v-else class="flex justify-end gap-3">
+          <BaseButton variant="secondary" @click="calTarget = null">Cancelar</BaseButton>
+          <BaseButton :disabled="!calPuntuacion" @click="confirmarCal">Enviar</BaseButton>
         </div>
       </div>
     </BaseModal>

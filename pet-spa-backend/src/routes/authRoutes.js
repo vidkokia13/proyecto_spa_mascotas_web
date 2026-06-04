@@ -30,9 +30,9 @@ router.post('/2fa/login', validate(verify2FA, 'body'), asyncHandler(authControll
 router.get('/me', authRequired, asyncHandler(authController.me));
 router.patch('/change-password', authRequired, validate(changePassword, 'body'), asyncHandler(authController.changePassword));
 
-// 2FA setup (solo admin y jefe)
-router.post('/2fa/setup', authRequired, requireRole('admin', 'jefe'), asyncHandler(authController.setup2FA));
-router.post('/2fa/verify-setup', authRequired, requireRole('admin', 'jefe'), validate(verifySetup2FA, 'body'), asyncHandler(authController.verifySetup2FA));
-router.delete('/2fa', authRequired, requireRole('admin', 'jefe'), asyncHandler(authController.disable2FA));
+// 2FA setup (todos los roles internos excepto cliente)
+router.post('/2fa/setup', authRequired, requireRole('admin', 'jefe', 'recepcion', 'trabajador'), asyncHandler(authController.setup2FA));
+router.post('/2fa/verify-setup', authRequired, requireRole('admin', 'jefe', 'recepcion', 'trabajador'), validate(verifySetup2FA, 'body'), asyncHandler(authController.verifySetup2FA));
+router.delete('/2fa', authRequired, requireRole('admin', 'jefe', 'recepcion', 'trabajador'), asyncHandler(authController.disable2FA));
 
 module.exports = router;

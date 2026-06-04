@@ -13,6 +13,8 @@ export function useAuth() {
 
   async function login(payload: LoginPayload): Promise<void> {
     await authStore.login(payload)
+    // Si hay twoFactorToken, el store ya navegó a /2fa — no hacer nada más
+    if (authStore.twoFactorToken) return
     uiStore.showToast('Bienvenido, ' + authStore.user?.nombre, 'success')
     redirectByRole(authStore.user?.rol)
   }
@@ -37,6 +39,8 @@ export function useAuth() {
       router.push({ name: ROUTE_NAMES.ADMIN_DASHBOARD })
     } else if (rol === ROLES.TRABAJADOR) {
       router.push({ name: ROUTE_NAMES.EMPLOYEE_DASHBOARD })
+    } else if (rol === ROLES.RECEPCION) {
+      router.push({ name: ROUTE_NAMES.RECEPCION_DASHBOARD })
     } else {
       router.push({ name: ROUTE_NAMES.CLIENT_PROFILE })
     }
